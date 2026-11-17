@@ -1,0 +1,45 @@
+{
+  "check_id": "47067436-d703-5af3-acbe-c01f99c67b53",
+  "installation_id": "e29d50a4-48d4-4f7d-8eb1-b820865d348a",
+  "source": "DEMO",
+  "app_version": "0.1.0",
+  "android_api_level": 36,
+  "started_at": "2026-10-29T18:00:00Z",
+  "finished_at": "2026-10-29T18:00:02Z",
+  "run_status": "COMPLETED",
+  "signals": [
+    {
+      "signal_id": "a85aecf3-6ae9-5993-abd0-043f0b8a55b0",
+      "kind": "WIFI_SECURITY",
+      "outcome": "PASS",
+      "reason_code": "OS_SECURITY_REPORTED",
+      "evidence": {
+        "security_type": "SAE",
+        "reported_by_os": true
+      }
+    },
+    {
+      "signal_id": "6f9c8155-be6e-5743-9478-3498a6078beb",
+      "kind": "CAPTIVE_PORTAL",
+      "outcome": "PASS",
+      "reason_code": "OS_PORTAL_NOT_DETECTED",
+      "evidence": {
+        "reported_by_os": true
+      }
+    },
+    {
+      "signal_id": "11a083fe-e458-525d-8897-0ed1dbd59909",
+      "kind": "DNS",
+      "outcome": "PASS",
+      "reason_code": "DNS_MATCH",
+      "evidence": {}
+    },
+    {
+      "signal_id": "f5d80c73-5b14-5e20-9324-0b6cb64fe07a",
+      "kind": "HTTPS",
+      "outcome": "PASS",
+      "reason_code": "TLS_VALID",
+      "evidence": {}
+    }
+  ]
+}

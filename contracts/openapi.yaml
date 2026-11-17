@@ -1,0 +1,939 @@
+openapi: 3.1.0
+info:
+  title: HoneyPhone Local Demo API
+  description: API P0 local para revisiones de red. Sin autenticación; no exponer
+    fuera del laboratorio. Rutas honeypot x-phase P1 son solo diseño, no están implementadas.
+  version: 0.3.0
+servers:
+- url: http://127.0.0.1:8000
+  description: Ubuntu local
+- url: http://127.0.0.1:8081
+  description: Android por adb reverse
+security: []
+paths:
+  /healthz:
+    get:
+      summary: Health
+      operationId: health_healthz_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: Service Unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /api/v1/network-checks:
+    post:
+      tags:
+      - P0 checks
+      summary: Create Check
+      operationId: create_check_api_v1_network_checks_post
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckResponse'
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckResponse'
+          description: OK
+        '409':
+          description: ID con contenido distinto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: Carga mayor que 64 KiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Base de datos no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+      - P0 checks
+      summary: List Checks
+      operationId: list_checks_api_v1_network_checks_get
+      parameters:
+      - name: installation_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Installation Id
+      - name: source
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/DataSource'
+          - type: 'null'
+          title: Source
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 512
+          - type: 'null'
+          title: Cursor
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckPage'
+        '422':
+          description: Cursor o filtros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Base de datos no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/network-checks/{check_id}:
+    get:
+      tags:
+      - P0 checks
+      summary: Get Check
+      operationId: get_check_api_v1_network_checks__check_id__get
+      parameters:
+      - name: check_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Check Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckResponse'
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Identificador inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Base de datos no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+      - P0 checks
+      summary: Delete Check
+      operationId: delete_check_api_v1_network_checks__check_id__delete
+      parameters:
+      - name: check_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Check Id
+      responses:
+        '204':
+          description: Successful Response
+        '404':
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Identificador inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Base de datos no disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/honeypot/sessions:
+    post:
+      operationId: upsertHoneypotSession
+      tags:
+      - P1 honeypot
+      x-phase: P1
+      description: Crear o cerrar sesión; no reabrir STOPPED; mismo estado/metadata
+        idempotente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoneypotSession'
+      responses:
+        '201':
+          description: Creada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoneypotSession'
+        '200':
+          description: Existente o cerrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HoneypotSession'
+        '409': &id003
+          description: ID con contenido distinto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422': &id004
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      operationId: listHoneypotSessions
+      tags:
+      - P1 honeypot
+      x-phase: P1
+      parameters:
+      - name: installation_id
+        in: query
+        required: false
+        schema: &id001
+          type: string
+          format: uuid
+      - name: source
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/Source'
+      - &id005
+        name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+      - &id006
+        name: cursor
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 512
+      responses:
+        '200':
+          description: Sesiones
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionPage'
+  /api/v1/honeypot/sessions/{session_id}:
+    parameters:
+    - name: session_id
+      in: path
+      required: true
+      schema: *id001
+    delete:
+      operationId: deleteHoneypotSession
+      tags:
+      - P1 honeypot
+      x-phase: P1
+      responses:
+        '204':
+          description: Sesión y eventos borrados
+        '404': &id002
+          description: No encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/honeypot/sessions/{session_id}/events:
+    parameters:
+    - name: session_id
+      in: path
+      required: true
+      schema: *id001
+    post:
+      operationId: appendHoneypotEvents
+      tags:
+      - P1 honeypot
+      x-phase: P1
+      description: Lote atómico, deduplicado por event_id+hash canónico; 100 eventos
+        como máximo y 64 KiB.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventBatch'
+      responses:
+        '200':
+          description: Lote procesado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchResult'
+        '404': *id002
+        '409': *id003
+        '413':
+          description: Carga mayor que 64 KiB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422': *id004
+    get:
+      operationId: listHoneypotEvents
+      tags:
+      - P1 honeypot
+      x-phase: P1
+      parameters:
+      - *id005
+      - *id006
+      responses:
+        '200':
+          description: Eventos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPage'
+        '404': *id002
+components:
+  schemas:
+    Source:
+      type: string
+      enum:
+      - LIVE
+      - DEMO
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 64
+        message:
+          type: string
+          minLength: 1
+          maxLength: 256
+        request_id:
+          type: string
+          minLength: 1
+          maxLength: 64
+    HoneypotSession:
+      type: object
+      additionalProperties: false
+      required:
+      - session_id
+      - installation_id
+      - source
+      - listen_port
+      - started_at
+      - ended_at
+      - state
+      properties:
+        session_id: *id001
+        installation_id: *id001
+        source:
+          $ref: '#/components/schemas/Source'
+        listen_port:
+          type: integer
+          minimum: 1024
+          maximum: 65535
+          default: 8080
+        started_at: &id007
+          type: string
+          format: date-time
+        ended_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        state:
+          type: string
+          enum:
+          - RUNNING
+          - STOPPED
+          - INTERRUPTED
+    HoneypotEvent:
+      type: object
+      additionalProperties: false
+      required:
+      - event_id
+      - occurred_at
+      - source_ip_masked
+      - http_method
+      - request_path
+      - user_agent_family
+      - content_length
+      - response_code
+      properties:
+        event_id: *id001
+        occurred_at: *id007
+        source_ip_masked:
+          type: string
+          maxLength: 64
+          description: 'CIDR normalizado: /24 IPv4 o /64 IPv6; validar formato y bits
+            de host.'
+        http_method:
+          type: string
+          enum:
+          - GET
+          - HEAD
+          - POST
+          - OTHER
+        request_path:
+          type: string
+          enum:
+          - /
+          - /admin
+          - /login
+          - /robots.txt
+          - /other
+        user_agent_family:
+          type:
+          - string
+          - 'null'
+          enum:
+          - BROWSER
+          - SCANNER
+          - OTHER
+          - UNKNOWN
+          - null
+        content_length:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        response_code:
+          type: integer
+          minimum: 100
+          maximum: 599
+    EventBatch:
+      type: object
+      additionalProperties: false
+      required:
+      - events
+      properties:
+        events:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/HoneypotEvent'
+    BatchResult:
+      type: object
+      additionalProperties: false
+      required:
+      - inserted_count
+      - duplicate_count
+      properties:
+        inserted_count:
+          type: integer
+          minimum: 0
+        duplicate_count:
+          type: integer
+          minimum: 0
+    SessionPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoneypotSession'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+    EventPage:
+      type: object
+      additionalProperties: false
+      required:
+      - items
+      - next_cursor
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/HoneypotEvent'
+        next_cursor:
+          type:
+          - string
+          - 'null'
+    CheckCreate:
+      properties:
+        check_id:
+          type: string
+          format: uuid
+          title: Check Id
+        installation_id:
+          type: string
+          format: uuid
+          title: Installation Id
+        source:
+          $ref: '#/components/schemas/DataSource'
+        network_label:
+          anyOf:
+          - type: string
+            maxLength: 40
+            minLength: 1
+          - type: 'null'
+          title: Network Label
+        wifi_metrics:
+          anyOf:
+          - $ref: '#/components/schemas/WifiMetrics'
+          - type: 'null'
+        app_version:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: App Version
+        android_api_level:
+          type: integer
+          maximum: 100.0
+          minimum: 29.0
+          title: Android Api Level
+        started_at:
+          type: string
+          format: date-time
+          title: Started At
+        finished_at:
+          type: string
+          format: date-time
+          title: Finished At
+        run_status:
+          $ref: '#/components/schemas/RunStatus'
+        signals:
+          items:
+            $ref: '#/components/schemas/CheckSignalCreate'
+          type: array
+          maxItems: 4
+          minItems: 4
+          title: Signals
+      additionalProperties: false
+      type: object
+      required:
+      - check_id
+      - installation_id
+      - source
+      - app_version
+      - android_api_level
+      - started_at
+      - finished_at
+      - run_status
+      - signals
+      title: CheckCreate
+    CheckPage:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/CheckResponse'
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Cursor
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - next_cursor
+      title: CheckPage
+    CheckResponse:
+      properties:
+        network_label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Network Label
+        wifi_metrics:
+          anyOf:
+          - $ref: '#/components/schemas/WifiMetrics'
+          - type: 'null'
+        check_id:
+          type: string
+          format: uuid
+          title: Check Id
+        installation_id:
+          type: string
+          format: uuid
+          title: Installation Id
+        source:
+          $ref: '#/components/schemas/DataSource'
+        app_version:
+          type: string
+          title: App Version
+        android_api_level:
+          type: integer
+          title: Android Api Level
+        started_at:
+          type: string
+          format: date-time
+          title: Started At
+        finished_at:
+          type: string
+          format: date-time
+          title: Finished At
+        run_status:
+          $ref: '#/components/schemas/RunStatus'
+        signals:
+          items:
+            $ref: '#/components/schemas/CheckSignalResponse'
+          type: array
+          title: Signals
+        verdict:
+          $ref: '#/components/schemas/OverallVerdict'
+        has_attention:
+          type: boolean
+          title: Has Attention
+        received_at:
+          type: string
+          format: date-time
+          title: Received At
+      additionalProperties: false
+      type: object
+      required:
+      - check_id
+      - installation_id
+      - source
+      - app_version
+      - android_api_level
+      - started_at
+      - finished_at
+      - run_status
+      - signals
+      - verdict
+      - has_attention
+      - received_at
+      title: CheckResponse
+    CheckSignalCreate:
+      properties:
+        signal_id:
+          type: string
+          format: uuid
+          title: Signal Id
+        kind:
+          $ref: '#/components/schemas/SignalKind'
+        outcome:
+          $ref: '#/components/schemas/SignalOutcome'
+        reason_code:
+          $ref: '#/components/schemas/ReasonCode'
+        evidence:
+          $ref: '#/components/schemas/SignalEvidence'
+        elapsed_ms:
+          anyOf:
+          - type: integer
+            maximum: 300000.0
+            minimum: 0.0
+          - type: 'null'
+          title: Elapsed Ms
+      additionalProperties: false
+      type: object
+      required:
+      - signal_id
+      - kind
+      - outcome
+      - reason_code
+      - evidence
+      title: CheckSignalCreate
+    CheckSignalResponse:
+      properties:
+        signal_id:
+          type: string
+          format: uuid
+          title: Signal Id
+        kind:
+          $ref: '#/components/schemas/SignalKind'
+        outcome:
+          $ref: '#/components/schemas/SignalOutcome'
+        reason_code:
+          $ref: '#/components/schemas/ReasonCode'
+        evidence:
+          additionalProperties: true
+          type: object
+          title: Evidence
+        elapsed_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Elapsed Ms
+      additionalProperties: false
+      type: object
+      required:
+      - signal_id
+      - kind
+      - outcome
+      - reason_code
+      - evidence
+      title: CheckSignalResponse
+    DataSource:
+      type: string
+      enum:
+      - LIVE
+      - DEMO
+      title: DataSource
+    ErrorResponse:
+      properties:
+        code:
+          type: string
+          title: Code
+        message:
+          type: string
+          title: Message
+        request_id:
+          type: string
+          maxLength: 64
+          minLength: 1
+          title: Request Id
+      additionalProperties: false
+      type: object
+      required:
+      - code
+      - message
+      title: ErrorResponse
+    Health:
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+          - degraded
+          title: Status
+        database:
+          type: string
+          enum:
+          - ready
+          - unavailable
+          title: Database
+      additionalProperties: false
+      type: object
+      required:
+      - status
+      - database
+      title: Health
+    OverallVerdict:
+      type: string
+      enum:
+      - NO_DISCREPANCIES
+      - ATTENTION_REQUIRED
+      - INCOMPLETE
+      title: OverallVerdict
+    ReasonCode:
+      type: string
+      enum:
+      - OS_SECURITY_REPORTED
+      - OPEN_NETWORK
+      - LEGACY_SECURITY
+      - OS_PORTAL_NOT_DETECTED
+      - PORTAL_DETECTED
+      - FIELD_UNAVAILABLE
+      - PERMISSION_DENIED
+      - NO_WIFI
+      - NOT_CONFIGURED
+      - NETWORK_CHANGED
+      - CANCELLED
+      - DNS_MATCH
+      - DNS_MISMATCH
+      - REFERENCE_UNAVAILABLE
+      - TIMEOUT
+      - NETWORK_ERROR
+      - TLS_VALID
+      - TLS_INVALID
+      title: ReasonCode
+    RunStatus:
+      type: string
+      enum:
+      - COMPLETED
+      - CANCELLED
+      title: RunStatus
+    SignalEvidence:
+      properties:
+        security_type:
+          type: string
+          enum:
+          - OPEN
+          - WEP
+          - PSK_UNSPECIFIED
+          - SAE
+          - OWE
+          - EAP
+          - EAP_WPA3
+          - WAPI
+          - PASSPOINT
+          - UNKNOWN
+          title: Security Type
+        reported_by_os:
+          type: boolean
+          title: Reported By Os
+        validated:
+          type: boolean
+          title: Validated
+        reason:
+          type: string
+          enum:
+          - NOT_CONFIGURED
+          - PERMISSION_DENIED
+          - FIELD_UNAVAILABLE
+          - NO_WIFI
+          - NETWORK_CHANGED
+          - CANCELLED
+          title: Reason
+        elapsed_ms:
+          type: integer
+          maximum: 300000.0
+          minimum: 0.0
+          title: Elapsed Ms
+        probe_config_version:
+          type: string
+          maxLength: 32
+          minLength: 1
+          title: Probe Config Version
+      additionalProperties: false
+      type: object
+      title: SignalEvidence
+    SignalKind:
+      type: string
+      enum:
+      - WIFI_SECURITY
+      - CAPTIVE_PORTAL
+      - DNS
+      - HTTPS
+      title: SignalKind
+    SignalOutcome:
+      type: string
+      enum:
+      - PASS
+      - ATTENTION
+      - UNKNOWN
+      - NOT_APPLICABLE
+      title: SignalOutcome
+    WifiMetrics:
+      properties:
+        rssi_dbm:
+          anyOf:
+          - type: integer
+            maximum: -1.0
+            minimum: -126.0
+          - type: 'null'
+          title: Rssi Dbm
+        frequency_mhz:
+          anyOf:
+          - type: integer
+            maximum: 71000.0
+            minimum: 2400.0
+          - type: 'null'
+          title: Frequency Mhz
+        wifi_standard:
+          anyOf:
+          - type: string
+            enum:
+            - LEGACY
+            - WIFI_4
+            - WIFI_5
+            - WIFI_6
+            - WIFI_7
+            - WIGIG
+            - UNKNOWN
+          - type: 'null'
+          title: Wifi Standard
+        link_speed_mbps:
+          anyOf:
+          - type: integer
+            maximum: 100000.0
+            minimum: 1.0
+          - type: 'null'
+          title: Link Speed Mbps
+        tx_link_speed_mbps:
+          anyOf:
+          - type: integer
+            maximum: 100000.0
+            minimum: 1.0
+          - type: 'null'
+          title: Tx Link Speed Mbps
+        rx_link_speed_mbps:
+          anyOf:
+          - type: integer
+            maximum: 100000.0
+            minimum: 1.0
+          - type: 'null'
+          title: Rx Link Speed Mbps
+        internet_validated:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Internet Validated
+      additionalProperties: false
+      type: object
+      title: WifiMetrics
+      description: Snapshot of connection telemetry. Missing values remain null.

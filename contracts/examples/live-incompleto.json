@@ -1,0 +1,48 @@
+{
+  "check_id": "fafccb62-2e11-5515-a201-bdf9356f7172",
+  "installation_id": "e29d50a4-48d4-4f7d-8eb1-b820865d348a",
+  "source": "LIVE",
+  "app_version": "0.1.0",
+  "android_api_level": 36,
+  "started_at": "2026-10-29T18:00:00Z",
+  "finished_at": "2026-10-29T18:00:02Z",
+  "run_status": "COMPLETED",
+  "signals": [
+    {
+      "signal_id": "3de7a613-78c1-566a-9245-06b37b14cbd8",
+      "kind": "WIFI_SECURITY",
+      "outcome": "UNKNOWN",
+      "reason_code": "FIELD_UNAVAILABLE",
+      "evidence": {
+        "reason": "FIELD_UNAVAILABLE"
+      }
+    },
+    {
+      "signal_id": "26c5bcc7-e82a-5c76-8de2-0b4750ab6868",
+      "kind": "CAPTIVE_PORTAL",
+      "outcome": "UNKNOWN",
+      "reason_code": "FIELD_UNAVAILABLE",
+      "evidence": {
+        "reason": "FIELD_UNAVAILABLE"
+      }
+    },
+    {
+      "signal_id": "f8b9d34c-24c5-5de5-8034-f47166405a61",
+      "kind": "DNS",
+      "outcome": "UNKNOWN",
+      "reason_code": "NOT_CONFIGURED",
+      "evidence": {
+        "reason": "NOT_CONFIGURED"
+      }
+    },
+    {
+      "signal_id": "5dbbdcea-61af-51c5-8bbc-a3403b9bb299",
+      "kind": "HTTPS",
+      "outcome": "UNKNOWN",
+      "reason_code": "NOT_CONFIGURED",
+      "evidence": {
+        "reason": "NOT_CONFIGURED"
+      }
+    }
+  ]
+}

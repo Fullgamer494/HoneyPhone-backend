@@ -1,0 +1,48 @@
+{
+  "check_id": "5a716fdc-6595-4a06-a6ee-9db8aded3458",
+  "installation_id": "e29d50a4-48d4-4f7d-8eb1-b820865d348a",
+  "source": "DEMO",
+  "app_version": "0.1.0",
+  "android_api_level": 36,
+  "started_at": "2026-10-29T18:00:00Z",
+  "finished_at": "2026-10-29T18:00:02Z",
+  "run_status": "COMPLETED",
+  "signals": [
+    {
+      "signal_id": "f8657d07-b289-4ac0-b9ea-7a5725b72aa8",
+      "kind": "WIFI_SECURITY",
+      "outcome": "UNKNOWN",
+      "reason_code": "FIELD_UNAVAILABLE",
+      "evidence": {
+        "reason": "FIELD_UNAVAILABLE"
+      }
+    },
+    {
+      "signal_id": "2cc91c7f-b6be-4c30-92b5-9838a755bbd7",
+      "kind": "CAPTIVE_PORTAL",
+      "outcome": "UNKNOWN",
+      "reason_code": "FIELD_UNAVAILABLE",
+      "evidence": {
+        "reason": "FIELD_UNAVAILABLE"
+      }
+    },
+    {
+      "signal_id": "e5d37313-7b04-49e0-ab35-7c628c0ae12b",
+      "kind": "DNS",
+      "outcome": "UNKNOWN",
+      "reason_code": "NOT_CONFIGURED",
+      "evidence": {
+        "reason": "NOT_CONFIGURED"
+      }
+    },
+    {
+      "signal_id": "3034ae07-b43e-41bc-9743-5c7fe1c79fc5",
+      "kind": "HTTPS",
+      "outcome": "UNKNOWN",
+      "reason_code": "NOT_CONFIGURED",
+      "evidence": {
+        "reason": "NOT_CONFIGURED"
+      }
+    }
+  ]
+}

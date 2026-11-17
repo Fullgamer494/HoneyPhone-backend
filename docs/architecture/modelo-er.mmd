@@ -1,0 +1,33 @@
+erDiagram
+    INSTALLATIONS ||--o{ NETWORK_CHECKS : registra
+    NETWORK_CHECKS ||--|{ CHECK_SIGNALS : contiene
+    INSTALLATIONS ||--o{ HONEYPOT_SESSIONS : inicia
+    HONEYPOT_SESSIONS ||--o{ HONEYPOT_EVENTS : recibe
+    INSTALLATIONS {
+      uuid installation_id PK
+      string app_version
+    }
+    NETWORK_CHECKS {
+      uuid check_id PK
+      uuid installation_id FK
+      string source
+      string verdict
+      timestamp started_at
+    }
+    CHECK_SIGNALS {
+      uuid signal_id PK
+      uuid check_id FK
+      string kind
+      string outcome
+      string reason_code
+    }
+    HONEYPOT_SESSIONS {
+      uuid session_id PK
+      uuid installation_id FK
+      string state
+    }
+    HONEYPOT_EVENTS {
+      uuid event_id PK
+      uuid session_id FK
+      string source_ip_masked
+    }
