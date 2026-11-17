@@ -1,0 +1,8 @@
+# Entornos y artefactos Python locales
+.venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+src/*.egg-info/
+.env
