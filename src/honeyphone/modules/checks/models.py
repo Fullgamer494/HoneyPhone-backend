@@ -54,6 +54,8 @@ class Installation(Base):
     installation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     platform: Mapped[str] = mapped_column(String(16), nullable=False, default="ANDROID", server_default="ANDROID")
     app_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    device_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     checks: Mapped[list["NetworkCheck"]] = relationship(back_populates="installation", cascade="all, delete-orphan")

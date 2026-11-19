@@ -13,6 +13,10 @@ class CheckRepository:
         self.session = session
 
     def touch_installation(self, installation_id: UUID, app_version: str) -> None:
+        existing = self.session.get(Installation, installation_id)
+        if existing is not None and not existing.active:
+            from fastapi import HTTPException
+            raise HTTPException(status_code=403, detail={"code": "DEVICE_REVOKED", "message": "El dispositivo está revocado."})
         stmt = insert(Installation).values(installation_id=installation_id, app_version=app_version)
         stmt = stmt.on_conflict_do_update(
             index_elements=[Installation.installation_id],
