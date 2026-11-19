@@ -9,6 +9,7 @@ from honeyphone.core.middleware import BodySizeLimitMiddleware
 from honeyphone.modules.checks.router import router as checks_router
 from honeyphone.modules.health.router import router as health_router
 from honeyphone.modules.devices.router import router as devices_router
+from honeyphone.modules.honeypot.router import router as honeypot_router
 
 app = FastAPI(
     title="HoneyPhone Local Demo API",
@@ -23,3 +24,4 @@ app.add_exception_handler(SQLAlchemyError, database_error_handler)
 app.include_router(health_router)
 app.include_router(checks_router)
 app.include_router(devices_router)
+app.include_router(honeypot_router)
