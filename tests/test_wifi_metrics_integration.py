@@ -14,7 +14,7 @@ BASE = os.environ["HP_TEST_BASE_URL"]
 DATABASE = os.environ["DATABASE_URL"]
 if not make_url(DATABASE).database.startswith("honeyphone_verify_"):
     raise RuntimeError("Use a dedicated honeyphone_verify_* PostgreSQL database.")
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 engine = create_engine(DATABASE)
 
 def request(method, path, payload=None):
