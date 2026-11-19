@@ -38,3 +38,7 @@ POST conserva idempotencia por check_id. Reutilizar el ID con contenido distinto
 Alembic 0001 crea las tablas base; 0002 añade network_label y wifi_metrics. Las migraciones son la fuente ejecutable del esquema.
 
 La API no tiene autenticación. En esta entrega escucha solo en 127.0.0.1 y no debe exponerse a una interfaz de red. No guarda SSID/BSSID, ubicación, IP completa del teléfono ni credenciales.
+
+## Pruebas de integración
+
+Instala las dependencias con `.venv/bin/pip install -e '.[test]'`. Las pruebas requieren una API en ejecución y una base PostgreSQL desechable cuyo nombre comience con `honeyphone_verify_`; se niegan a usar otra base. Define `HP_TEST_BASE_URL` con la URL de esa API y `DATABASE_URL` con la conexión directa a esa misma base, aplica las migraciones y ejecuta `.venv/bin/pytest -q`. Las pruebas crean y eliminan registros para comprobar persistencia, idempotencia, validación y revocación de dispositivos.
