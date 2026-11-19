@@ -396,6 +396,72 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/honeypot/sessions/{session_id}/events:
+    post:
+      tags:
+      - honeypot
+      summary: Append Events
+      operationId: append_events_api_v1_honeypot_sessions__session_id__events_post
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Session Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventBatch'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - honeypot
+      summary: List Events
+      operationId: list_events_api_v1_honeypot_sessions__session_id__events_get
+      parameters:
+      - name: session_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Session Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
   /api/v1/honeypot/sessions/{session_id}:
     parameters:
     - name: session_id
@@ -412,85 +478,12 @@ paths:
       responses:
         '204':
           description: Sesión y eventos borrados
-        '404': &id002
+        '404':
           description: No encontrado
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/v1/honeypot/sessions/{session_id}/events:
-    parameters:
-    - name: session_id
-      in: path
-      required: true
-      schema: *id001
-    post:
-      operationId: appendHoneypotEvents
-      tags:
-      - P1 honeypot
-      x-phase: P1
-      description: Lote atómico, deduplicado por event_id+hash canónico; 100 eventos
-        como máximo y 64 KiB.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventBatch'
-      responses:
-        '200':
-          description: Lote procesado
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BatchResult'
-        '404': *id002
-        '409':
-          description: ID con contenido distinto
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '413':
-          description: Carga mayor que 64 KiB
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '422':
-          description: Datos inválidos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    get:
-      operationId: listHoneypotEvents
-      tags:
-      - P1 honeypot
-      x-phase: P1
-      parameters:
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 50
-          default: 20
-      - name: cursor
-        in: query
-        required: false
-        schema:
-          type: string
-          maxLength: 512
-      responses:
-        '200':
-          description: Eventos
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventPage'
-        '404': *id002
 components:
   schemas:
     Source:
@@ -538,7 +531,7 @@ components:
           minimum: 1024
           maximum: 65535
           default: 8080
-        started_at: &id003
+        started_at: &id002
           type: string
           format: date-time
         ended_at:
@@ -566,7 +559,7 @@ components:
       - response_code
       properties:
         event_id: *id001
-        occurred_at: *id003
+        occurred_at: *id002
         source_ip_masked:
           type: string
           maxLength: 64
@@ -606,17 +599,19 @@ components:
           minimum: 100
           maximum: 599
     EventBatch:
-      type: object
-      additionalProperties: false
-      required:
-      - events
       properties:
         events:
-          type: array
-          minItems: 1
-          maxItems: 100
           items:
-            $ref: '#/components/schemas/HoneypotEvent'
+            $ref: '#/components/schemas/EventInput'
+          type: array
+          maxItems: 100
+          minItems: 1
+          title: Events
+      additionalProperties: false
+      type: object
+      required:
+      - events
+      title: EventBatch
     BatchResult:
       type: object
       additionalProperties: false
@@ -911,6 +906,52 @@ components:
       - code
       - message
       title: ErrorResponse
+    EventInput:
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          title: Event Id
+        occurred_at:
+          type: string
+          format: date-time
+          title: Occurred At
+        source_ip_masked:
+          type: string
+          maxLength: 64
+          title: Source Ip Masked
+        http_method:
+          type: string
+          title: Http Method
+        request_path:
+          type: string
+          title: Request Path
+        user_agent_family:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: User Agent Family
+        content_length:
+          type: integer
+          maximum: 2147483647.0
+          minimum: 0.0
+          title: Content Length
+        response_code:
+          type: integer
+          maximum: 599.0
+          minimum: 100.0
+          title: Response Code
+      additionalProperties: false
+      type: object
+      required:
+      - event_id
+      - occurred_at
+      - source_ip_masked
+      - http_method
+      - request_path
+      - content_length
+      - response_code
+      title: EventInput
     HTTPValidationError:
       properties:
         detail:
