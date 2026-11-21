@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 
 from honeyphone.core.database import get_session
 from honeyphone.modules.checks.models import DataSource, HoneypotEvent, HoneypotSession, HoneypotState, Installation
+from honeyphone.modules.accounts.models import User
+from honeyphone.modules.accounts.security import get_current_user
 
 router = APIRouter(prefix="/api/v1/honeypot/sessions", tags=["honeypot"])
 
@@ -48,10 +50,14 @@ class EventBatch(BaseModel):
     events: list[EventInput] = Field(min_length=1, max_length=100)
 
 @router.post("", status_code=201)
-def upsert_session(payload: SessionInput, session: Session = Depends(get_session)):
+def upsert_session(payload: SessionInput, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     device = session.get(Installation, payload.installation_id)
     if device is None or not device.active:
         raise HTTPException(403, detail={"code":"DEVICE_UNAVAILABLE","message":"El dispositivo no está registrado o fue revocado."})
+    if device.owner_user_id is None:
+        device.owner_user_id = user.user_id
+    elif device.owner_user_id != user.user_id:
+        raise HTTPException(403, detail={"code":"DEVICE_OWNED_BY_OTHER_ACCOUNT","message":"Esta instalación está asociada a otra cuenta."})
     row = session.get(HoneypotSession, payload.session_id)
     if row is None:
         row = HoneypotSession(**payload.model_dump())
@@ -66,15 +72,16 @@ def upsert_session(payload: SessionInput, session: Session = Depends(get_session
     return row
 
 @router.get("")
-def list_sessions(installation_id: UUID | None = None, limit: int = Query(20, ge=1, le=50), session: Session = Depends(get_session)):
-    query = select(HoneypotSession).order_by(HoneypotSession.started_at.desc()).limit(limit)
+def list_sessions(installation_id: UUID | None = None, limit: int = Query(20, ge=1, le=50), session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+    query = select(HoneypotSession).join(Installation).where(Installation.owner_user_id == user.user_id).order_by(HoneypotSession.started_at.desc()).limit(limit)
     if installation_id is not None: query = query.where(HoneypotSession.installation_id == installation_id)
     return {"items": list(session.scalars(query).all()), "next_cursor": None}
 
 @router.post("/{session_id}/events")
-def append_events(session_id: UUID, batch: EventBatch, db: Session = Depends(get_session)):
+def append_events(session_id: UUID, batch: EventBatch, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
     with db.begin():
-        if db.get(HoneypotSession, session_id) is None:
+        owned_session = db.scalar(select(HoneypotSession).join(Installation).where(HoneypotSession.session_id == session_id, Installation.owner_user_id == user.user_id))
+        if owned_session is None:
             raise HTTPException(404, detail={"code":"SESSION_NOT_FOUND","message":"No se encontró la sesión."})
         inserted = duplicates = 0
         for item in batch.events:
@@ -106,8 +113,9 @@ def append_events(session_id: UUID, batch: EventBatch, db: Session = Depends(get
     return {"inserted_count":inserted,"duplicate_count":duplicates}
 
 @router.get("/{session_id}/events")
-def list_events(session_id: UUID, limit: int = Query(20, ge=1, le=50), db: Session = Depends(get_session)):
-    if db.get(HoneypotSession, session_id) is None:
+def list_events(session_id: UUID, limit: int = Query(20, ge=1, le=50), db: Session = Depends(get_session), user: User = Depends(get_current_user)):
+    owned_session = db.scalar(select(HoneypotSession.session_id).join(Installation).where(HoneypotSession.session_id == session_id, Installation.owner_user_id == user.user_id))
+    if owned_session is None:
         raise HTTPException(404, detail={"code":"SESSION_NOT_FOUND","message":"No se encontró la sesión."})
     rows = db.scalars(select(HoneypotEvent).where(HoneypotEvent.session_id==session_id).order_by(HoneypotEvent.occurred_at.desc()).limit(limit)).all()
     return {"items":rows,"next_cursor":None}

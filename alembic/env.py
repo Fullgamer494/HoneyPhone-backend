@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config, pool
 from honeyphone.core.config import settings
 from honeyphone.core.database import Base
 from honeyphone.modules.checks import models  # noqa: F401
+from honeyphone.modules.accounts import models as account_models  # noqa: F401
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)

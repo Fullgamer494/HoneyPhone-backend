@@ -45,7 +45,7 @@ Desde el equipo local, después de asociar la Elastic IP, puedes transferir la i
 
 ```bash
 scp -i /home/fullg/Projects/honeyphone/AWS/HoneyPhone.pem \
-  /tmp/honeyphone-api-0.3.0.tar.gz \
+  /tmp/honeyphone-api-0.4.0.tar.gz \
   /home/fullg/Projects/honeyphone/HoneyPhone-backend/infra/compose.ec2.yaml \
   ubuntu@3.134.150.144:/tmp/
 ```
@@ -53,7 +53,7 @@ scp -i /home/fullg/Projects/honeyphone/AWS/HoneyPhone.pem \
 El archivo comprimido contiene la imagen construida. Si ya no existe, vuelve a generarlo desde la raíz de `HoneyPhone-backend`:
 
 ```bash
-docker save honeyphone-api:0.3.0 | gzip -1 > /tmp/honeyphone-api-0.3.0.tar.gz
+docker save honeyphone-api:0.4.0 | gzip -1 > /tmp/honeyphone-api-0.4.0.tar.gz
 ```
 
 ## 3. Preparar e iniciar los contenedores
@@ -62,14 +62,20 @@ Conéctate por SSH y ejecuta en la instancia:
 
 ```bash
 sudo install -d -m 0750 /opt/honeyphone
-gzip -dc /tmp/honeyphone-api-0.3.0.tar.gz | sudo docker load
+gzip -dc /tmp/honeyphone-api-0.4.0.tar.gz | sudo docker load
 sudo install -m 0644 /tmp/compose.ec2.yaml /opt/honeyphone/compose.yaml
 ```
 
 Crea una contraseña aleatoria para PostgreSQL. El comando conserva el archivo si ya existe y no imprime la contraseña:
 
 ```bash
-sudo bash -c 'umask 077; if [ ! -f /opt/honeyphone/.env ]; then printf "DB_PASSWORD=" > /opt/honeyphone/.env; openssl rand -hex 32 >> /opt/honeyphone/.env; fi; chmod 600 /opt/honeyphone/.env'
+sudo bash -c 'umask 077; touch /opt/honeyphone/.env; grep -q "^DB_PASSWORD=" /opt/honeyphone/.env || { printf "DB_PASSWORD=" >> /opt/honeyphone/.env; openssl rand -hex 32 >> /opt/honeyphone/.env; }; grep -q "^AUTH_SECRET_KEY=" /opt/honeyphone/.env || { printf "AUTH_SECRET_KEY=" >> /opt/honeyphone/.env; openssl rand -hex 32 >> /opt/honeyphone/.env; }; grep -q "^GOOGLE_CLIENT_IDS=" /opt/honeyphone/.env || printf "GOOGLE_CLIENT_IDS=\n" >> /opt/honeyphone/.env; chmod 600 /opt/honeyphone/.env'
+
+Antes del primer arranque, edita `/opt/honeyphone/.env` y asigna a `GOOGLE_CLIENT_IDS` el ID de cliente OAuth **Web** (no el secreto). Conserva el `AUTH_SECRET_KEY` generado; no lo publiques ni lo reemplaces entre despliegues, porque eso cerraría las sesiones activas.
+
+```bash
+sudo nano /opt/honeyphone/.env
+```
 ```
 
 Inicia los servicios:
@@ -106,14 +112,14 @@ docker login -u TU_USUARIO
 Introduce el token cuando Docker lo solicite. No lo guardes en el repositorio ni lo compartas en el chat. Etiqueta y publica la imagen:
 
 ```bash
-docker tag honeyphone-api:0.3.0 TU_USUARIO/honeyphone-api:0.3.0
-docker push TU_USUARIO/honeyphone-api:0.3.0
+docker tag honeyphone-api:0.4.0 TU_USUARIO/honeyphone-api:0.4.0
+docker push TU_USUARIO/honeyphone-api:0.4.0
 ```
 
 Para que EC2 use la imagen publicada, añade su nombre al archivo `/opt/honeyphone/.env` en EC2:
 
 ```text
-HONEYPHONE_API_IMAGE=TU_USUARIO/honeyphone-api:0.3.0
+HONEYPHONE_API_IMAGE=TU_USUARIO/honeyphone-api:0.4.0
 ```
 
 Después actualiza el servicio:
@@ -227,12 +233,14 @@ services:
     networks: [private]
 
   api:
-    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.3.0}
+    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.0}
     restart: unless-stopped
     environment:
       APP_ENV: production
       DATABASE_URL: postgresql+psycopg://honeyphone:${DB_PASSWORD}@db:5432/honeyphone
       MAX_BODY_BYTES: 65536
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
     depends_on:
       db:
         condition: service_healthy

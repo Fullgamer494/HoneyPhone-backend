@@ -52,6 +52,7 @@ def enum_values(enum_cls):
 class Installation(Base):
     __tablename__ = "installations"
     installation_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    owner_user_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True)
     platform: Mapped[str] = mapped_column(String(16), nullable=False, default="ANDROID", server_default="ANDROID")
     app_version: Mapped[str] = mapped_column(String(32), nullable=False)
     device_name: Mapped[str | None] = mapped_column(String(64), nullable=True)

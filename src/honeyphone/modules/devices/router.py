@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 
 from honeyphone.core.database import get_session
 from honeyphone.modules.checks.models import Installation
+from honeyphone.modules.accounts.models import User
+from honeyphone.modules.accounts.security import get_current_user
 
 router = APIRouter(prefix="/api/v1/devices", tags=["devices"])
 
@@ -23,38 +25,44 @@ def output(device: Installation):
             "last_seen_at": device.last_seen_at}
 
 @router.post("", status_code=201)
-def register_device(installation_id: UUID, app_version: str = "0.0.0", session: Session = Depends(get_session)):
+def register_device(installation_id: UUID, app_version: str = "0.0.0", session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     device = session.get(Installation, installation_id)
     if device is None:
-        device = Installation(installation_id=installation_id, app_version=app_version)
+        device = Installation(installation_id=installation_id, app_version=app_version, owner_user_id=user.user_id)
         session.add(device)
         session.commit()
         session.refresh(device)
+    elif device.owner_user_id is None:
+        device.owner_user_id = user.user_id
+        device.app_version = app_version
+        session.commit(); session.refresh(device)
+    elif device.owner_user_id != user.user_id:
+        raise HTTPException(403, detail={"code":"DEVICE_OWNED_BY_OTHER_ACCOUNT","message":"Esta instalación está asociada a otra cuenta."})
     return output(device)
 
 @router.get("")
-def list_devices(session: Session = Depends(get_session)):
-    return {"items": [output(d) for d in session.scalars(select(Installation).order_by(Installation.last_seen_at.desc())).all()]}
+def list_devices(session: Session = Depends(get_session), user: User = Depends(get_current_user)):
+    return {"items": [output(d) for d in session.scalars(select(Installation).where(Installation.owner_user_id == user.user_id).order_by(Installation.last_seen_at.desc())).all()]}
 
 @router.get("/{installation_id}")
-def get_device(installation_id: UUID, session: Session = Depends(get_session)):
+def get_device(installation_id: UUID, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     device = session.get(Installation, installation_id)
-    if device is None: raise HTTPException(404, detail={"code":"DEVICE_NOT_FOUND","message":"No se encontró el dispositivo."})
+    if device is None or device.owner_user_id != user.user_id: raise HTTPException(404, detail={"code":"DEVICE_NOT_FOUND","message":"No se encontró el dispositivo."})
     return output(device)
 
 @router.patch("/{installation_id}")
-def update_device(installation_id: UUID, payload: DeviceUpdate, session: Session = Depends(get_session)):
+def update_device(installation_id: UUID, payload: DeviceUpdate, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     device = session.get(Installation, installation_id)
-    if device is None: raise HTTPException(404, detail={"code":"DEVICE_NOT_FOUND","message":"No se encontró el dispositivo."})
+    if device is None or device.owner_user_id != user.user_id: raise HTTPException(404, detail={"code":"DEVICE_NOT_FOUND","message":"No se encontró el dispositivo."})
     if not device.active: raise HTTPException(409, detail={"code":"DEVICE_REVOKED","message":"El dispositivo está revocado."})
     for key, value in payload.model_dump(exclude_unset=True).items(): setattr(device, key, value)
     session.commit(); session.refresh(device)
     return output(device)
 
 @router.delete("/{installation_id}")
-def revoke_device(installation_id: UUID, session: Session = Depends(get_session)):
+def revoke_device(installation_id: UUID, session: Session = Depends(get_session), user: User = Depends(get_current_user)):
     device = session.get(Installation, installation_id)
-    if device is None: raise HTTPException(404, detail={"code":"DEVICE_NOT_FOUND","message":"No se encontró el dispositivo."})
+    if device is None or device.owner_user_id != user.user_id: raise HTTPException(404, detail={"code":"DEVICE_NOT_FOUND","message":"No se encontró el dispositivo."})
     device.active = False
     session.commit()
     return output(device)

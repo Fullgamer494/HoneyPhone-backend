@@ -18,7 +18,7 @@ class CheckService:
         self.session = session
         self.repo = CheckRepository(session)
 
-    def create(self, payload: CheckCreate) -> tuple[NetworkCheck, bool]:
+    def create(self, payload: CheckCreate, user_id: UUID) -> tuple[NetworkCheck, bool]:
         canonical = canonical_payload(payload)
         digest = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
         has_attention = any(signal.outcome == SignalOutcome.ATTENTION or signal.outcome == "ATTENTION" for signal in payload.signals)
@@ -27,8 +27,8 @@ class CheckService:
 
         try:
             with self.session.begin():
-                self.repo.touch_installation(payload.installation_id, payload.app_version)
-                existing = self.repo.get(payload.check_id)
+                self.repo.touch_installation(payload.installation_id, payload.app_version, user_id)
+                existing = self.repo.get(payload.check_id, user_id)
                 if existing is not None:
                     if existing.payload_sha256 != digest:
                         raise HTTPException(status_code=409, detail={"code": "CHECK_ID_CONFLICT", "message": "check_id ya existe con contenido distinto."})
@@ -65,28 +65,28 @@ class CheckService:
                 return check, True
         except IntegrityError as exc:
             self.session.rollback()
-            existing = self.repo.get(payload.check_id)
+            existing = self.repo.get(payload.check_id, user_id)
             if existing is not None and existing.payload_sha256 == digest:
                 return existing, False
             raise HTTPException(status_code=409, detail={"code": "IDENTIFIER_CONFLICT", "message": "check_id o signal_id ya está asociado a contenido existente."}) from exc
 
-    def get(self, check_id: UUID) -> NetworkCheck:
-        check = self.repo.get(check_id)
+    def get(self, check_id: UUID, user_id: UUID) -> NetworkCheck:
+        check = self.repo.get(check_id, user_id)
         if check is None:
             raise HTTPException(status_code=404, detail={"code": "CHECK_NOT_FOUND", "message": "No se encontró la revisión."})
         return check
 
-    def list(self, installation_id: UUID | None, source: DataSource | None, limit: int, cursor_token: str | None):
+    def list(self, user_id: UUID, installation_id: UUID | None, source: DataSource | None, limit: int, cursor_token: str | None):
         cursor = decode_cursor(cursor_token) if cursor_token else None
-        rows = self.repo.list(installation_id, source, limit, cursor)
+        rows = self.repo.list(user_id, installation_id, source, limit, cursor)
         has_more = len(rows) > limit
         page = rows[:limit]
         next_cursor = encode_cursor(page[-1].started_at, page[-1].check_id) if has_more and page else None
         return page, next_cursor
 
-    def delete(self, check_id: UUID) -> None:
+    def delete(self, check_id: UUID, user_id: UUID) -> None:
         with self.session.begin():
-            if not self.repo.delete(check_id):
+            if not self.repo.delete(check_id, user_id):
                 raise HTTPException(status_code=404, detail={"code": "CHECK_NOT_FOUND", "message": "No se encontró la revisión."})
 
 
