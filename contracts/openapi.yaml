@@ -1,20 +1,21 @@
 openapi: 3.1.0
 info:
-  title: HoneyPhone Local Demo API
-  description: API P0 local para revisiones de red. Sin autenticación; no exponer
-    fuera del laboratorio. Rutas honeypot x-phase P1 son solo diseño, no están implementadas.
-  version: 0.3.0
+  title: HoneyPhone API
+  description: API de HoneyPhone con cuentas, autenticación y datos aislados por usuario.
+  version: 0.4.0
 servers:
 - url: http://127.0.0.1:8000
   description: Ubuntu local
 - url: http://127.0.0.1:8081
   description: Android por adb reverse
-security: []
+security:
+- BearerAuth: []
 paths:
   /healthz:
     get:
       summary: Health
       operationId: health_healthz_get
+      security: []
       responses:
         '200':
           description: Successful Response
@@ -28,6 +29,120 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+  /api/v1/auth/register:
+    post:
+      tags:
+      - accounts
+      summary: Register
+      operationId: register_api_v1_auth_register_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 10
+                  maxLength: 128
+      responses:
+        '201':
+          description: Cuenta creada y sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '409':
+          description: El correo ya está registrado
+        '422':
+          description: Datos inválidos
+  /api/v1/auth/login:
+    post:
+      tags:
+      - accounts
+      summary: Login
+      operationId: login_api_v1_auth_login_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 10
+                  maxLength: 128
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: Credenciales incorrectas
+        '422':
+          description: Datos inválidos
+  /api/v1/auth/google:
+    post:
+      tags:
+      - accounts
+      summary: Google Login
+      operationId: google_login_api_v1_auth_google_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [id_token]
+              properties:
+                id_token:
+                  type: string
+                  minLength: 20
+                  maxLength: 8192
+      responses:
+        '200':
+          description: Sesión iniciada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: Token de Google inválido
+        '503':
+          description: Acceso con Google no configurado o no disponible
+  /api/v1/auth/me:
+    get:
+      tags:
+      - accounts
+      summary: Me
+      operationId: me_api_v1_auth_me_get
+      responses:
+        '200':
+          description: Cuenta autenticada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '401':
+          description: Sesión inválida o vencida
   /api/v1/network-checks:
     post:
       tags:
@@ -485,7 +600,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
+    Account:
+      type: object
+      required: [user_id, email]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        display_name:
+          type: [string, 'null']
+    AuthToken:
+      type: object
+      required: [access_token, token_type, expires_in, user]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          const: bearer
+        expires_in:
+          type: integer
+        user:
+          $ref: '#/components/schemas/Account'
     Source:
       type: string
       enum:
