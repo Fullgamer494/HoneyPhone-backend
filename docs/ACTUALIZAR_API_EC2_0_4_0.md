@@ -121,6 +121,43 @@ sudo docker compose \
 
 La imagen ejecuta las migraciones Alembic al iniciar la API.
 
+### Si la API se reinicia por `AUTH_SECRET_KEY`
+
+Si los logs dicen `AUTH_SECRET_KEY must be a random secret of at least 32 characters in production`, actualiza la variable en `/opt/honeyphone/.env`. Este comando genera una clave nueva y la escribe sin imprimirla:
+
+```bash
+sudo python3 - <<'PY'
+from pathlib import Path
+import secrets
+
+path = Path("/opt/honeyphone/.env")
+lines = path.read_text().splitlines()
+key_line = f"AUTH_SECRET_KEY={secrets.token_hex(32)}"
+
+for index, line in enumerate(lines):
+    if line.startswith("AUTH_SECRET_KEY="):
+        lines[index] = key_line
+        break
+else:
+    lines.append(key_line)
+
+path.write_text("\n".join(lines) + "\n")
+path.chmod(0o600)
+print("AUTH_SECRET_KEY actualizado; valor oculto.")
+PY
+```
+
+Recrea el contenedor para que Compose lea la variable actualizada:
+
+```bash
+sudo docker compose \
+  --env-file /opt/honeyphone/.env \
+  -f /opt/honeyphone/compose.yaml \
+  up -d --force-recreate api
+```
+
+Después, revisa `ps` y los logs como se indica abajo. Mantén la nueva clave privada: cambiarla invalida las sesiones existentes. Si una clave se compartió en un chat o captura, trátala como expuesta y rótala.
+
 ## 6. Verificar el despliegue
 
 En EC2, revisa el estado y los logs:
