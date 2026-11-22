@@ -158,6 +158,24 @@ sudo docker compose \
 
 Después, revisa `ps` y los logs como se indica abajo. Mantén la nueva clave privada: cambiarla invalida las sesiones existentes. Si una clave se compartió en un chat o captura, trátala como expuesta y rótala.
 
+Si la API aún reporta que la clave es inválida, no generes claves adicionales todavía. Comprueba de forma segura si Compose está leyendo el archivo y resolviendo la variable; el comando solo imprime presencia, longitud y si conserva el texto de ejemplo, nunca la clave:
+
+```bash
+sudo docker compose \
+  --env-file /opt/honeyphone/.env \
+  -f /opt/honeyphone/compose.yaml \
+  config --format json |
+python3 -c 'import json,sys; e=json.load(sys.stdin)["services"]["api"]["environment"]; v=e.get("AUTH_SECRET_KEY",""); print("AUTH_SECRET_KEY presente:", bool(v)); print("Longitud:", len(v)); print("Tiene valor local de ejemplo:", "local-only" in v)'
+```
+
+El resultado esperado es clave presente, longitud de al menos 32 y `False` para el texto de ejemplo. Confirma también que el servicio `api` del Compose incluye la variable:
+
+```bash
+sudo grep -n 'AUTH_SECRET_KEY' /opt/honeyphone/compose.yaml
+```
+
+Si la variable no aparece o la comprobación anterior indica una clave ausente/corta, corrige la línea `AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required}` en el entorno del servicio `api` y confirma que `/opt/honeyphone/.env` contiene una línea `AUTH_SECRET_KEY=` sin espacios alrededor del signo igual.
+
 ## 6. Verificar el despliegue
 
 En EC2, revisa el estado y los logs:
