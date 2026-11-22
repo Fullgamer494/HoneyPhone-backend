@@ -174,7 +174,32 @@ El resultado esperado es clave presente, longitud de al menos 32 y `False` para 
 sudo grep -n 'AUTH_SECRET_KEY' /opt/honeyphone/compose.yaml
 ```
 
-Si la variable no aparece o la comprobación anterior indica una clave ausente/corta, corrige la línea `AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required}` en el entorno del servicio `api` y confirma que `/opt/honeyphone/.env` contiene una línea `AUTH_SECRET_KEY=` sin espacios alrededor del signo igual.
+Si la variable no aparece, abre el Compose:
+
+```bash
+sudo nano /opt/honeyphone/compose.yaml
+```
+
+Dentro de `services:` → `api:` → `environment:`, agrega estas dos entradas respetando la indentación YAML y manteniendo el resto de las variables existentes:
+
+```yaml
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required}
+      GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
+```
+
+Confirma que `/opt/honeyphone/.env` contiene líneas `AUTH_SECRET_KEY=` y `GOOGLE_CLIENT_IDS=` sin espacios alrededor del signo igual. Vuelve a ejecutar el diagnóstico seguro de arriba: la clave debe aparecer como presente, tener longitud de al menos 32 y no contener el marcador local. Luego valida el Compose y recrea solo la API:
+
+```bash
+sudo docker compose \
+  --env-file /opt/honeyphone/.env \
+  -f /opt/honeyphone/compose.yaml \
+  config --quiet
+
+sudo docker compose \
+  --env-file /opt/honeyphone/.env \
+  -f /opt/honeyphone/compose.yaml \
+  up -d --force-recreate api
+```
 
 ## 6. Verificar el despliegue
 
