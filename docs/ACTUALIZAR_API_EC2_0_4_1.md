@@ -121,6 +121,56 @@ sudo docker compose \
   up -d api
 ```
 
+### Si aparece `pull access denied for honeyphone-api`
+
+Ese mensaje significa que Compose intenta descargar una imagen remota con ese nombre, pero la imagen local `0.4.1` no está construida o Compose apunta a otro nombre. No hagas `docker login`: construye la imagen local y alinea la etiqueta del Compose.
+
+En EC2, primero construye la etiqueta exacta que vamos a usar:
+
+```bash
+sudo docker build \
+  -t honeyphone-api:0.4.1 \
+  /tmp/honeyphone-api-0.4.1
+
+sudo docker image ls --format '{{.Repository}}:{{.Tag}}' \
+  | grep '^honeyphone-api:0.4.1$'
+```
+
+En `/opt/honeyphone/.env`, agrega o corrige esta línea:
+
+```dotenv
+HONEYPHONE_API_IMAGE=honeyphone-api:0.4.1
+```
+
+Edita el Compose y asegúrate de que la propiedad `image` del servicio `api` use esa variable y valor predeterminado:
+
+```bash
+sudo nano /opt/honeyphone/compose.yaml
+```
+
+```yaml
+    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.1}
+```
+
+Guarda y valida qué imagen resolverá Compose sin mostrar secretos:
+
+```bash
+sudo docker compose \
+  --env-file /opt/honeyphone/.env \
+  -f /opt/honeyphone/compose.yaml \
+  config --format json \
+  | python3 -c 'import json,sys; print("Imagen API:", json.load(sys.stdin)["services"]["api"]["image"])'
+```
+
+Debe imprimir `honeyphone-api:0.4.1`. Entonces recrea solo la API:
+
+```bash
+sudo docker compose \
+  --env-file /opt/honeyphone/.env \
+  -f /opt/honeyphone/compose.yaml \
+  up -d --force-recreate api
+```
+
 La imagen ejecuta las migraciones Alembic al iniciar la API.
 
 ### Si la API se reinicia por `AUTH_SECRET_KEY`
