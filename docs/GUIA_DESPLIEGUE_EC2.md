@@ -45,7 +45,7 @@ Desde el equipo local, después de asociar la Elastic IP, puedes transferir la i
 
 ```bash
 scp -i /home/fullg/Projects/honeyphone/AWS/HoneyPhone.pem \
-  /tmp/honeyphone-api-0.4.0.tar.gz \
+  /tmp/honeyphone-api-0.4.1.tar.gz \
   /home/fullg/Projects/honeyphone/HoneyPhone-backend/infra/compose.ec2.yaml \
   ubuntu@3.134.150.144:/tmp/
 ```
@@ -53,7 +53,7 @@ scp -i /home/fullg/Projects/honeyphone/AWS/HoneyPhone.pem \
 El archivo comprimido contiene la imagen construida. Si ya no existe, vuelve a generarlo desde la raíz de `HoneyPhone-backend`:
 
 ```bash
-docker save honeyphone-api:0.4.0 | gzip -1 > /tmp/honeyphone-api-0.4.0.tar.gz
+docker save honeyphone-api:0.4.1 | gzip -1 > /tmp/honeyphone-api-0.4.1.tar.gz
 ```
 
 ## 3. Preparar e iniciar los contenedores
@@ -62,7 +62,7 @@ Conéctate por SSH y ejecuta en la instancia:
 
 ```bash
 sudo install -d -m 0750 /opt/honeyphone
-gzip -dc /tmp/honeyphone-api-0.4.0.tar.gz | sudo docker load
+gzip -dc /tmp/honeyphone-api-0.4.1.tar.gz | sudo docker load
 sudo install -m 0644 /tmp/compose.ec2.yaml /opt/honeyphone/compose.yaml
 ```
 
@@ -112,14 +112,14 @@ docker login -u TU_USUARIO
 Introduce el token cuando Docker lo solicite. No lo guardes en el repositorio ni lo compartas en el chat. Etiqueta y publica la imagen:
 
 ```bash
-docker tag honeyphone-api:0.4.0 TU_USUARIO/honeyphone-api:0.4.0
-docker push TU_USUARIO/honeyphone-api:0.4.0
+docker tag honeyphone-api:0.4.1 TU_USUARIO/honeyphone-api:0.4.1
+docker push TU_USUARIO/honeyphone-api:0.4.1
 ```
 
 Para que EC2 use la imagen publicada, añade su nombre al archivo `/opt/honeyphone/.env` en EC2:
 
 ```text
-HONEYPHONE_API_IMAGE=TU_USUARIO/honeyphone-api:0.4.0
+HONEYPHONE_API_IMAGE=TU_USUARIO/honeyphone-api:0.4.1
 ```
 
 Después actualiza el servicio:
@@ -233,7 +233,7 @@ services:
     networks: [private]
 
   api:
-    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.0}
+    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.1}
     restart: unless-stopped
     environment:
       APP_ENV: production

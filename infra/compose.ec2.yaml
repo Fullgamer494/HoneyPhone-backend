@@ -19,7 +19,7 @@ services:
     networks: [private]
 
   api:
-    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.0}
+    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.1}
     restart: unless-stopped
     environment:
       APP_ENV: production

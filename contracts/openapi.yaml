@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: HoneyPhone API
   description: API de HoneyPhone con cuentas, autenticación y datos aislados por usuario.
-  version: 0.4.0
+  version: 0.4.1
 servers:
 - url: http://127.0.0.1:8000
   description: Ubuntu local

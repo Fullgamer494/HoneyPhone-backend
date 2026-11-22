@@ -14,7 +14,7 @@ from honeyphone.modules.accounts.router import router as accounts_router
 
 app = FastAPI(
     title="HoneyPhone API",
-    version="0.4.0",
+    version="0.4.1",
     description="API de HoneyPhone con cuentas, autenticación y datos aislados por usuario.",
     openapi_tags=[{"name": "P0 health"}, {"name": "P0 checks"}],
 )

@@ -2,6 +2,8 @@
 
 Esta guía construye la imagen **en EC2** para evitar que Docker Desktop en la computadora tenga que descargar `python:3.12-slim`. Usa la instancia con IP pública `3.134.150.144` y conserva el Compose existente de EC2, incluido Caddy.
 
+La versión `0.4.1` incluye la dependencia `requests` que necesita el transporte de Google Auth. La imagen `0.4.0` arrancaba Alembic, pero Uvicorn fallaba al importar `google.auth.transport.requests` porque `requests` no estaba instalado.
+
 > Ejecuta cada bloque en el entorno indicado. No ejecutes `docker compose down -v`: eliminaría el volumen de PostgreSQL.
 
 ## 1. Empaquetar el backend en la computadora
@@ -15,13 +17,13 @@ tar \
   --exclude=.git \
   --exclude=.venv \
   --exclude='__pycache__' \
-  -czf /tmp/honeyphone-api-0.4.0.tar.gz .
+  -czf /tmp/honeyphone-api-0.4.1.tar.gz .
 ```
 
 Comprueba que se creó el archivo:
 
 ```bash
-ls -lh /tmp/honeyphone-api-0.4.0.tar.gz
+ls -lh /tmp/honeyphone-api-0.4.1.tar.gz
 ```
 
 ## 2. Copiar el archivo a EC2
@@ -30,7 +32,7 @@ En la computadora local:
 
 ```bash
 scp -i ~/Projects/honeyphone/AWS/HoneyPhone.pem \
-  /tmp/honeyphone-api-0.4.0.tar.gz \
+  /tmp/honeyphone-api-0.4.1.tar.gz \
   ubuntu@3.134.150.144:/tmp/
 ```
 
@@ -48,14 +50,14 @@ ssh -i ~/Projects/honeyphone/AWS/HoneyPhone.pem \
 En la terminal de EC2, extrae el código y construye la imagen:
 
 ```bash
-mkdir -p /tmp/honeyphone-api-0.4.0
+mkdir -p /tmp/honeyphone-api-0.4.1
 
-tar -xzf /tmp/honeyphone-api-0.4.0.tar.gz \
-  -C /tmp/honeyphone-api-0.4.0
+tar -xzf /tmp/honeyphone-api-0.4.1.tar.gz \
+  -C /tmp/honeyphone-api-0.4.1
 
 sudo docker build \
-  -t honeyphone-api:0.4.0 \
-  /tmp/honeyphone-api-0.4.0
+  -t honeyphone-api:0.4.1 \
+  /tmp/honeyphone-api-0.4.1
 ```
 
 La instancia necesita conexión a internet para descargar la imagen base y los paquetes de Python. Si el build falla por DNS o por una descarga vencida, vuelve a ejecutar el comando `docker build` en EC2.
@@ -76,7 +78,7 @@ Asegúrate de que existan estas variables:
 DB_PASSWORD=valor_existente_de_la_base
 AUTH_SECRET_KEY=valor_secreto_existente
 GOOGLE_CLIENT_IDS=70591473922-uk7clkrg40kdue637mu4s7i1k43k677a.apps.googleusercontent.com
-HONEYPHONE_API_IMAGE=honeyphone-api:0.4.0
+HONEYPHONE_API_IMAGE=honeyphone-api:0.4.1
 ```
 
 `GOOGLE_CLIENT_IDS` debe contener el ID público del cliente OAuth de tipo **Web**. No pongas el `client_secret` ni el ID del cliente Android en esta variable. Si `HONEYPHONE_API_IMAGE` no se usa en el Compose actual, no hace falta añadirla.
@@ -98,7 +100,7 @@ sudo nano /opt/honeyphone/compose.yaml
 Cambia solo esa referencia a:
 
 ```yaml
-image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.0}
+image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.1}
 ```
 
 Conserva los servicios, redes, volúmenes, puertos y configuración de Caddy actuales.
@@ -232,7 +234,7 @@ Debe imprimir:
 /api/v1/auth/register
 ```
 
-Si no aparece, revisa los logs del servicio y confirma que el Compose apunta a `honeyphone-api:0.4.0`.
+Si no aparece, revisa los logs del servicio y confirma que el Compose apunta a `honeyphone-api:0.4.1`.
 
 ## 7. Instalar el APK en el A56
 

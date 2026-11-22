@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "honeyphone-api"
-version = "0.4.0"
+version = "0.4.1"
 description = "API de HoneyPhone con cuentas y datos aislados por usuario"
 requires-python = ">=3.12"
 dependencies = [
@@ -14,7 +14,7 @@ dependencies = [
   "SQLAlchemy>=2.0,<3",
   "psycopg[binary]>=3.2,<4",
   "alembic>=1.14,<2",
-  "google-auth>=2.30,<3",
+  "google-auth[requests]>=2.30,<3",
   "email-validator>=2.2,<3",
 ]
 

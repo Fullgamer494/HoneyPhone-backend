@@ -1,6 +1,6 @@
 # HoneyPhone API
 
-API FastAPI 0.4.0 con Pydantic, SQLAlchemy 2, psycopg 3 y Alembic. Este repositorio contiene el servicio, PostgreSQL local, el contrato OpenAPI y herramientas de desarrollo.
+API FastAPI 0.4.1 con Pydantic, SQLAlchemy 2, psycopg 3 y Alembic. Este repositorio contiene el servicio, PostgreSQL local, el contrato OpenAPI y herramientas de desarrollo.
 
 ## Preparar entorno
 
