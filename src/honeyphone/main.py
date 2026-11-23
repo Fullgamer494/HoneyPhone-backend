@@ -11,10 +11,11 @@ from honeyphone.modules.health.router import router as health_router
 from honeyphone.modules.devices.router import router as devices_router
 from honeyphone.modules.honeypot.router import router as honeypot_router
 from honeyphone.modules.accounts.router import router as accounts_router
+from honeyphone.modules.site.router import router as site_router
 
 app = FastAPI(
     title="HoneyPhone API",
-    version="0.4.1",
+    version="0.5.0",
     description="API de HoneyPhone con cuentas, autenticación y datos aislados por usuario.",
     openapi_tags=[{"name": "P0 health"}, {"name": "P0 checks"}],
 )
@@ -27,3 +28,4 @@ app.include_router(checks_router)
 app.include_router(devices_router)
 app.include_router(honeypot_router)
 app.include_router(accounts_router)
+app.include_router(site_router)

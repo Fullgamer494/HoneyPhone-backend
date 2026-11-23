@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090a0b">
+  <meta name="description" content="HoneyPhone convierte señales de red y actividad en un Wi-Fi local en información comprensible y privada.">
+  <title>HoneyPhone — Observa tu red</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090a0b;--panel:#111315;--line:#292c2f;--muted:#a3a7aa;--text:#f3f4f4;--white:#fff;--soft:#d5d7d8;--max:1160px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}body{margin:0;background:radial-gradient(ellipse at 78% 6%,#202326 0,transparent 36%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}a{color:inherit;text-decoration:none}button,a{ -webkit-tap-highlight-color:transparent} .wrap{width:min(var(--max),calc(100% - 44px));margin:auto}.nav{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #202224}.brand{display:flex;gap:12px;align-items:center;font-weight:720;letter-spacing:.02em}.mark{width:31px;height:31px;border:1px solid #cfd1d2;border-radius:9px;position:relative;overflow:hidden;background:radial-gradient(circle at center,transparent 25%,#dfe1e2 26% 28%,transparent 29% 35%,#dfe1e2 36% 38%,transparent 39% 45%,#dfe1e2 46% 48%,transparent 49%)}.mark:after{content:"";position:absolute;inset:5px;border:1px solid #9da1a3;border-radius:50%;opacity:.65}.links{display:flex;align-items:center;gap:28px;color:#c1c4c6;font-size:14px}.links a:hover{color:white}.button{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:11px;padding:12px 18px;font-size:14px;font-weight:700;border:1px solid #f3f4f4;background:#f3f4f4;color:#101112;transition:transform .18s,background .18s}.button:hover{transform:translateY(-2px);background:#dfe1e2}.button.secondary{background:transparent;color:#f3f4f4;border-color:#46494b}.button.secondary:hover{background:#191b1d}.hero{min-height:610px;display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:78px 0 84px}.eyebrow{color:#b4b8ba;font-size:12px;letter-spacing:.2em;text-transform:uppercase;font-weight:650}.hero h1{font-size:clamp(48px,7vw,86px);line-height:.98;letter-spacing:-.065em;margin:23px 0 25px;max-width:680px}.hero p{color:#b9bdc0;font-size:18px;max-width:590px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}.hero-note{font-size:12px!important;margin-top:16px}.visual{height:420px;border:1px solid #333638;border-radius:26px;position:relative;overflow:hidden;background:linear-gradient(145deg,#151719,#0c0d0e 68%);display:grid;place-items:center}.orb{width:min(69%,310px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at center,#08090a 0 14%,transparent 15% 18%,#d4d6d7 19% 20%,transparent 21% 27%,#aeb2b4 28% 29%,transparent 30% 39%,#858a8c 40% 41%,transparent 42% 54%,#666b6e 55% 56%,transparent 57%);filter:drop-shadow(0 0 35px #dce0e222);animation:float 7s ease-in-out infinite}.orbit{position:absolute;width:77%;aspect-ratio:1;border:1px solid #393c3e;border-radius:50%;animation:spin 36s linear infinite}.orbit:before,.orbit:after{content:"";position:absolute;width:8px;height:8px;border:1px solid #d7dadb;border-radius:50%;background:#111315}.orbit:before{top:12%;left:16%}.orbit:after{bottom:17%;right:7%;width:5px;height:5px}.visual-label{position:absolute;bottom:22px;left:24px;color:#999ea0;font:12px ui-monospace,monospace;letter-spacing:.1em;text-transform:uppercase}.metrics{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:26px 0;margin:0 0 110px}.metric{padding:3px 26px;border-right:1px solid var(--line)}.metric:first-child{padding-left:0}.metric:last-child{border:0}.metric b{display:block;font-size:15px}.metric span{display:block;color:var(--muted);font-size:13px;margin-top:4px}.section{padding:35px 0 105px}.section-head{display:grid;grid-template-columns:.72fr 1.28fr;gap:55px;align-items:start;margin-bottom:42px}.section h2{font-size:clamp(34px,5vw,54px);letter-spacing:-.05em;line-height:1.05;margin:12px 0}.section-head p{margin:7px 0;color:var(--muted);font-size:17px;max-width:680px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.card{border:1px solid var(--line);border-radius:18px;background:linear-gradient(160deg,#131517,#0e1011);padding:24px;min-height:220px}.glyph{width:34px;height:34px;border:1px solid #595d60;border-radius:10px;display:grid;place-items:center;color:#e7e9ea;font-size:16px;margin-bottom:27px}.card h3{margin:0 0 9px;font-size:18px}.card p{margin:0;color:#aeb2b4;font-size:14px}.split{display:grid;grid-template-columns:1fr 1fr;gap:15px}.panel{border:1px solid var(--line);background:#101213;border-radius:20px;padding:30px}.panel h3{font-size:22px;margin:10px 0}.panel p,.panel li{color:#adb1b3;font-size:14px}.panel ul{padding-left:18px}.steps{counter-reset:step;display:grid;gap:11px}.steps details{border:1px solid var(--line);border-radius:14px;background:#101213;padding:18px 20px}.steps summary{cursor:pointer;font-weight:650;list-style:none}.steps summary:before{counter-increment:step;content:"0" counter(step);color:#969b9e;font:12px ui-monospace,monospace;margin-right:14px}.steps p{color:var(--muted);font-size:14px;margin:13px 0 0 39px}.people{display:flex;align-items:center;gap:18px}.avatar{width:55px;height:55px;border-radius:50%;border:1px solid #54585a;background:radial-gradient(circle,#f2f3f3 1px,transparent 1.4px) 0 0/5px 5px,#111}.person-name{font-weight:700}.person-role{color:var(--muted);font-size:13px}.callout{display:flex;justify-content:space-between;align-items:center;gap:30px;border:1px solid #45494b;border-radius:22px;padding:34px;background:linear-gradient(110deg,#191c1e,#101213)}.callout h2{font-size:32px;margin:0 0 6px}.callout p{color:var(--muted);margin:0;max-width:610px}.footer{border-top:1px solid #232628;padding:25px 0 40px;color:#858a8c;font-size:12px;display:flex;justify-content:space-between;gap:20px}.reveal{opacity:0;transform:translateY(15px);transition:opacity .65s,transform .65s}.reveal.visible{opacity:1;transform:none}@keyframes spin{to{transform:rotate(360deg)}}@keyframes float{50%{transform:translateY(-10px) scale(1.015)}}
+    @media(max-width:800px){.hero{grid-template-columns:1fr;padding:65px 0;gap:35px}.visual{height:320px}.links{gap:15px}.section-head{grid-template-columns:1fr;gap:10px}.grid{grid-template-columns:1fr 1fr}.metrics{margin-bottom:75px}.metric{padding:3px 13px}.callout{align-items:flex-start;flex-direction:column}.section{padding-bottom:75px}}
+    @media(max-width:540px){.wrap{width:min(100% - 30px,var(--max))}.links a:not(.button){display:none}.nav{height:65px}.hero{min-height:auto;padding:59px 0 55px}.hero h1{font-size:52px}.hero p{font-size:16px}.visual{height:270px}.grid,.split{grid-template-columns:1fr}.card{min-height:190px}.metrics{grid-template-columns:1fr;gap:17px}.metric,.metric:first-child{padding:0;border:0}.section-head{margin-bottom:25px}.footer{flex-direction:column}.panel{padding:23px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  </style>
+</head>
+<body>
+  <header class="wrap nav">
+    <a class="brand" href="#inicio" aria-label="HoneyPhone, inicio"><span class="mark" aria-hidden="true"></span><span>HoneyPhone</span></a>
+    <nav class="links" aria-label="Navegación principal">
+      <a href="#producto">Producto</a><a href="#alcance">Alcance</a><a href="#documentacion">Documentación</a><a href="#equipo">Equipo</a>
+      <a class="button" href="/download">Descargar APK <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+  <main id="inicio" class="wrap">
+    <section class="hero">
+      <div class="reveal visible">
+        <div class="eyebrow">Observabilidad de red personal</div>
+        <h1>Entiende lo que pasa en tu red.</h1>
+        <p>HoneyPhone convierte señales técnicas de tu conexión y actividad observada en un Wi‑Fi local en información clara para tomar mejores decisiones.</p>
+        <div class="actions"><a class="button" href="/download">Descargar para Android <span aria-hidden="true">↓</span></a><a class="button secondary" href="#producto">Conocer HoneyPhone <span aria-hidden="true">↓</span></a></div>
+        <p class="hero-note">Android · Señales verificables · Datos asociados a tu cuenta</p>
+      </div>
+      <div class="visual reveal" aria-label="Visualización abstracta de señales de red"><div class="orbit"></div><div class="orb"></div><span class="visual-label">Señal · Respuesta · Contexto</span></div>
+    </section>
+    <div class="metrics reveal" aria-label="Principios de HoneyPhone"><div class="metric"><b>Diagnóstico legible</b><span>Resultados explicados en lenguaje directo</span></div><div class="metric"><b>Actividad local</b><span>El señuelo escucha dentro de tu Wi‑Fi</span></div><div class="metric"><b>Datos por cuenta</b><span>El historial remoto se separa por usuario</span></div></div>
+
+    <section id="producto" class="section">
+      <div class="section-head reveal"><div><div class="eyebrow">Qué hace</div><h2>Señales con contexto.</h2></div><p>Una herramienta Android para observar algunas condiciones de conectividad y entender solicitudes dirigidas a un señuelo local. Cada resultado indica qué se consultó, qué pudo verificarse y cuáles son sus límites.</p></div>
+      <div class="grid">
+        <article class="card reveal"><div class="glyph">⌁</div><h3>Sondas DNS</h3><p>Consulta un registro TXT controlado y compara la respuesta de la red con una referencia DNS sobre HTTPS. Una diferencia puede señalar una respuesta inconsistente; no identifica por sí sola quién la causó.</p></article>
+        <article class="card reveal"><div class="glyph">↗</div><h3>Conexión HTTPS</h3><p>Conecta con un endpoint de producción usando la validación TLS de Android. Informa si se estableció el canal y respondió el servicio; no certifica la seguridad de toda la navegación.</p></article>
+        <article class="card reveal"><div class="glyph">◉</div><h3>Señuelo Wi‑Fi</h3><p>Levanta un servicio de prueba en el teléfono dentro de la red Wi‑Fi elegida. Registra metadatos técnicos de solicitudes entrantes, como hora, ruta, agente y dirección de origen disponible.</p></article>
+        <article class="card reveal"><div class="glyph">▤</div><h3>Informe de red</h3><p>Reúne estado de conectividad, resolución, HTTPS y señales del dispositivo para revisar qué funcionó, qué requiere atención o qué no pudo medirse.</p></article>
+        <article class="card reveal"><div class="glyph">↻</div><h3>Revisiones automáticas</h3><p>Si las activas, Android programa revisiones periódicas. Requieren conexión a Internet y pueden aplazarse por las políticas de batería del sistema.</p></article>
+        <article class="card reveal"><div class="glyph">◎</div><h3>Historial privado</h3><p>Las revisiones y sesiones sincronizadas pertenecen a la cuenta que inició sesión. Puedes cerrar sesión o eliminar la cuenta desde la aplicación.</p></article>
+      </div>
+    </section>
+
+    <section id="alcance" class="section">
+      <div class="section-head reveal"><div><div class="eyebrow">Uso responsable</div><h2>Qué observa. Qué no.</h2></div><p>HoneyPhone está pensado para tu propio teléfono y redes en las que tienes autorización. El señuelo ayuda a hacer visible el tráfico que llega a un servicio local de prueba.</p></div>
+      <div class="split">
+        <article class="panel reveal"><div class="eyebrow">Dentro del alcance</div><h3>Mediciones acotadas y explicables</h3><ul><li>Consultas DNS a un nombre y respuesta de referencia definidos para la aplicación.</li><li>Una petición HTTPS de comprobación, sin guardar el contenido de la respuesta.</li><li>Solicitudes recibidas por el señuelo local y metadatos disponibles en el dispositivo.</li><li>Sincronización autenticada del historial con la API de HoneyPhone.</li></ul></article>
+        <article class="panel reveal"><div class="eyebrow">Límites claros</div><h3>Un indicador, no una auditoría completa</h3><ul><li>No descubre por sí solo todos los equipos, vulnerabilidades o atacantes de una red.</li><li>Una dirección IP o un agente de usuario no demuestra la identidad de una persona o dispositivo.</li><li>El señuelo no solicita ni almacena contraseñas; no intercepta el tráfico de otras aplicaciones.</li><li>No reemplaza un firewall, antivirus, VPN ni una evaluación profesional.</li></ul></article>
+      </div>
+    </section>
+
+    <section id="documentacion" class="section">
+      <div class="section-head reveal"><div><div class="eyebrow">Documentación</div><h2>Empieza por lo esencial.</h2></div><p>Las páginas siguientes explican cómo leer los resultados y qué esperar de cada herramienta. La API expone su contrato OpenAPI para integraciones y diagnóstico.</p></div>
+      <div class="steps reveal">
+        <details><summary>Primer inicio y cuenta</summary><p>Crea una cuenta con correo y contraseña y confirma el correo desde el enlace recibido, o continúa con Google. Cada cuenta mantiene su propio historial sincronizado.</p></details>
+        <details><summary>Interpretar la sonda DNS</summary><p>HoneyPhone consulta el TXT de prueba y una referencia DoH. “Coincide” significa que ambas rutas devolvieron la respuesta configurada; una falla de referencia se presenta como no concluyente.</p></details>
+        <details><summary>Interpretar la comprobación HTTPS</summary><p>El resultado confirma que el endpoint respondió por HTTPS y que Android aceptó su certificado y nombre de host. No inspecciona las demás conexiones del teléfono.</p></details>
+        <details><summary>Usar el señuelo local</summary><p>Actívalo solo en una red Wi‑Fi bajo tu control. La notificación persistente permite detenerlo. Las solicitudes quedan asociadas a esa sesión; evita exponer el puerto a Internet.</p></details>
+        <details><summary>API y estado del servicio</summary><p><a href="/docs">Abrir referencia interactiva de la API ↗</a> · <a href="/openapi.json">Descargar esquema OpenAPI ↗</a> · <a href="/healthz">Consultar estado de API ↗</a></p></details>
+      </div>
+    </section>
+
+    <section id="equipo" class="section">
+      <div class="section-head reveal"><div><div class="eyebrow">Quiénes somos</div><h2>Una herramienta hecha con propósito.</h2></div><p>HoneyPhone nace como un proyecto independiente para hacer que algunas señales de red sean más comprensibles y para aprender mediante observación controlada, explicaciones claras y límites explícitos.</p></div>
+      <div class="panel people reveal"><div class="avatar" aria-hidden="true"></div><div><div class="person-name">Gilberto Málaga Fernández</div><div class="person-role">Creador de HoneyPhone</div></div></div>
+    </section>
+
+    <section class="section">
+      <div class="callout reveal"><div><div class="eyebrow">HoneyPhone para Android</div><h2>Observa. Comprende. Decide.</h2><p>Descarga la versión firmada publicada por el proyecto. Android puede pedirte que confirmes la instalación desde este origen.</p></div><a class="button" href="/download">Descargar APK <span aria-hidden="true">↓</span></a></div>
+    </section>
+  </main>
+  <footer class="wrap footer"><span>© <span id="year"></span> HoneyPhone · Proyecto independiente</span><span><a href="/docs">API</a>　·　<a href="#documentacion">Documentación</a></span></footer>
+  <script>
+    document.getElementById('year').textContent=new Date().getFullYear();
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}}),{threshold:.12});
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el=>observer.observe(el));
+  </script>
+</body>
+</html>
