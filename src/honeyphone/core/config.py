@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     max_body_bytes: int = Field(default=65536, ge=65536, le=65536)
     auth_secret_key: str = "local-only-change-this-secret-before-deploying"
     google_client_ids: str = ""
+    aws_region: str = "us-east-2"
+    email_from: str = "noreply@myuspot.org"
+    public_base_url: str = "https://honeyphone-api.myuspot.org"
+    apk_download_url: str = ""
 
     @model_validator(mode="after")
     def production_secret_is_not_default(self):
