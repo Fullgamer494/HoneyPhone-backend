@@ -26,49 +26,52 @@ class CheckService:
         verdict = OverallVerdict.INCOMPLETE if incomplete else OverallVerdict.ATTENTION_REQUIRED if has_attention else OverallVerdict.NO_DISCREPANCIES
 
         try:
-            with self.session.begin():
-                self.repo.touch_installation(payload.installation_id, payload.app_version, user_id)
-                existing = self.repo.get(payload.check_id, user_id)
-                if existing is not None:
-                    if existing.payload_sha256 != digest:
-                        raise HTTPException(status_code=409, detail={"code": "CHECK_ID_CONFLICT", "message": "check_id ya existe con contenido distinto."})
-                    return existing, False
-                check = NetworkCheck(
+            self.repo.touch_installation(payload.installation_id, payload.app_version, user_id)
+            existing = self.repo.get(payload.check_id, user_id)
+            if existing is not None:
+                if existing.payload_sha256 != digest:
+                    raise HTTPException(status_code=409, detail={"code": "CHECK_ID_CONFLICT", "message": "check_id ya existe con contenido distinto."})
+                self.session.commit()
+                return existing, False
+            check = NetworkCheck(
+                check_id=payload.check_id,
+                installation_id=payload.installation_id,
+                source=payload.source,
+                app_version=payload.app_version,
+                android_api_level=payload.android_api_level,
+                started_at=payload.started_at,
+                finished_at=payload.finished_at,
+                run_status=payload.run_status,
+                verdict=verdict,
+                has_attention=has_attention,
+                payload_sha256=digest,
+                network_label=payload.network_label,
+                wifi_metrics=payload.wifi_metrics.model_dump(exclude_none=True) if payload.wifi_metrics is not None else None,
+            )
+            signals = [
+                CheckSignal(
+                    signal_id=s.signal_id,
                     check_id=payload.check_id,
-                    installation_id=payload.installation_id,
-                    source=payload.source,
-                    app_version=payload.app_version,
-                    android_api_level=payload.android_api_level,
-                    started_at=payload.started_at,
-                    finished_at=payload.finished_at,
-                    run_status=payload.run_status,
-                    verdict=verdict,
-                    has_attention=has_attention,
-                    payload_sha256=digest,
-                    network_label=payload.network_label,
-                    wifi_metrics=payload.wifi_metrics.model_dump(exclude_none=True) if payload.wifi_metrics is not None else None,
+                    kind=s.kind,
+                    outcome=s.outcome,
+                    reason_code=s.reason_code,
+                    evidence=s.evidence.model_dump(exclude_none=True),
+                    elapsed_ms=s.elapsed_ms,
                 )
-                signals = [
-                    CheckSignal(
-                        signal_id=s.signal_id,
-                        check_id=payload.check_id,
-                        kind=s.kind,
-                        outcome=s.outcome,
-                        reason_code=s.reason_code,
-                        evidence=s.evidence.model_dump(exclude_none=True),
-                        elapsed_ms=s.elapsed_ms,
-                    )
-                    for s in payload.signals
-                ]
-                self.repo.add(check, signals)
-                self.session.flush()
-                return check, True
+                for s in payload.signals
+            ]
+            self.repo.add(check, signals)
+            self.session.commit()
+            return check, True
         except IntegrityError as exc:
             self.session.rollback()
             existing = self.repo.get(payload.check_id, user_id)
             if existing is not None and existing.payload_sha256 == digest:
                 return existing, False
             raise HTTPException(status_code=409, detail={"code": "IDENTIFIER_CONFLICT", "message": "check_id o signal_id ya está asociado a contenido existente."}) from exc
+        except Exception:
+            self.session.rollback()
+            raise
 
     def get(self, check_id: UUID, user_id: UUID) -> NetworkCheck:
         check = self.repo.get(check_id, user_id)
@@ -85,9 +88,13 @@ class CheckService:
         return page, next_cursor
 
     def delete(self, check_id: UUID, user_id: UUID) -> None:
-        with self.session.begin():
+        try:
             if not self.repo.delete(check_id, user_id):
                 raise HTTPException(status_code=404, detail={"code": "CHECK_NOT_FOUND", "message": "No se encontró la revisión."})
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            raise
 
 
 def canonical_payload(payload: CheckCreate) -> str:
