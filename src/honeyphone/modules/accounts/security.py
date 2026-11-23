@@ -82,4 +82,5 @@ def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(
 
 def issue_token(user: User) -> dict:
     return {"access_token": create_access_token(user), "token_type": "bearer", "expires_in": 43200,
-            "user": {"user_id": str(user.user_id), "email": user.email, "display_name": user.display_name}}
+            "user": {"user_id": str(user.user_id), "email": user.email, "display_name": user.display_name,
+                     "email_verified": user.email_verified_at is not None}}

@@ -1,8 +1,10 @@
 # Contrato y semántica
 
-`openapi.yaml` comenzó como propuesta del kit. La API FastAPI actual publica `/openapi.json`; su comparación de etapa 01 comprobó rutas, respuestas P0, propiedades/required, enums y cuerpos de ejemplo. Actualiza contrato y backend juntos si cambia la interfaz. Rutas P1 permanecen solo en el documento/SQL y no están registradas como endpoints operativos.
+`openapi.yaml` documenta las rutas operativas de FastAPI y publica los esquemas y ejemplos de solicitud y respuesta. La API también sirve el esquema generado en `/openapi.json`. Ejecuta `python scripts/sync-openapi.py` desde el repositorio backend después de cambiar rutas o modelos; el script sincroniza las rutas implementadas y conserva las rutas P1 marcadas como diseño. No presentes rutas P1 como funciones disponibles.
 
-Sin auth headers ni security scheme. Installation se crea con primer POST. Errores propios con `code/message`; FastAPI normaliza también errores de validación. Fechas RFC3339 con zona y base de datos UTC. Cliente no suministra verdict ni hash.
+`/healthz`, registro, inicio de sesión y autenticación con Google son públicos. Las rutas de cuentas que consultan o eliminan la cuenta, dispositivos, revisiones y sesiones/eventos del señuelo requieren `Authorization: Bearer <token>`. El servidor limita las cargas a 64 KiB. Los errores siguen `{code, message}` cuando la aplicación los construye; FastAPI también normaliza errores de validación. Fechas RFC3339 deben incluir zona horaria y se almacenan en UTC. El cliente no suministra el veredicto ni el hash de integridad interno.
+
+`DELETE /api/v1/auth/me` elimina la cuenta autenticada y sus instalaciones asociadas; las relaciones de base de datos eliminan los datos vinculados. La respuesta es `204 No Content`.
 
 ## Reglas de señal
 

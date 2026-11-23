@@ -2,12 +2,14 @@ openapi: 3.1.0
 info:
   title: HoneyPhone API
   description: API de HoneyPhone con cuentas, autenticación y datos aislados por usuario.
-  version: 0.4.1
+  version: 0.5.0
 servers:
 - url: http://127.0.0.1:8000
   description: Ubuntu local
 - url: http://127.0.0.1:8081
   description: Android por adb reverse
+- url: https://honeyphone-api.myuspot.org
+  description: Producción
 security:
 - BearerAuth: []
 paths:
@@ -54,13 +56,15 @@ paths:
                   maxLength: 128
       responses:
         '201':
-          description: Cuenta creada y sesión iniciada
+          description: Cuenta creada; se envía enlace de verificación
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthToken'
+                $ref: '#/components/schemas/EmailActionMessage'
         '409':
           description: El correo ya está registrado
+        '503':
+          description: Cuenta creada, pero SES no pudo enviar el correo
         '422':
           description: Datos inválidos
   /api/v1/auth/login:
@@ -95,8 +99,94 @@ paths:
                 $ref: '#/components/schemas/AuthToken'
         '401':
           description: Credenciales incorrectas
+        '403':
+          description: Cuenta desactivada o correo sin verificar
         '422':
           description: Datos inválidos
+  /api/v1/auth/verify-email/request:
+    post:
+      tags: [accounts]
+      summary: Reenviar verificación de correo
+      operationId: request_email_verification_api_v1_auth_verify_email_request_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailInput'
+      responses:
+        '202':
+          description: Solicitud aceptada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailActionMessage'
+        '503':
+          description: Amazon SES no está disponible
+  /api/v1/auth/verify-email/confirm:
+    post:
+      tags: [accounts]
+      summary: Confirmar correo con enlace de un solo uso
+      operationId: confirm_email_api_v1_auth_verify_email_confirm_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionToken'
+      responses:
+        '200':
+          description: Correo confirmado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailActionMessage'
+        '400':
+          description: Enlace vencido, consumido o inválido
+  /api/v1/auth/password/forgot:
+    post:
+      tags: [accounts]
+      summary: Solicitar recuperación de contraseña
+      operationId: forgot_password_api_v1_auth_password_forgot_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailInput'
+      responses:
+        '202':
+          description: Solicitud aceptada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailActionMessage'
+        '503':
+          description: Amazon SES no está disponible
+  /api/v1/auth/password/reset:
+    post:
+      tags: [accounts]
+      summary: Restablecer contraseña con enlace de un solo uso
+      operationId: reset_password_api_v1_auth_password_reset_post
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordReset'
+      responses:
+        '200':
+          description: Contraseña actualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailActionMessage'
+        '400':
+          description: Enlace vencido, consumido o inválido
   /api/v1/auth/google:
     post:
       tags:
@@ -141,6 +231,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Account'
+        '401':
+          description: Sesión inválida o vencida
+    delete:
+      tags:
+      - accounts
+      summary: Delete Me
+      operationId: delete_me_api_v1_auth_me_delete
+      responses:
+        '204':
+          description: Cuenta y datos asociados eliminados
         '401':
           description: Sesión inválida o vencida
   /api/v1/network-checks:
@@ -608,7 +708,7 @@ components:
   schemas:
     Account:
       type: object
-      required: [user_id, email]
+      required: [user_id, email, email_verified]
       properties:
         user_id:
           type: string
@@ -618,6 +718,44 @@ components:
           format: email
         display_name:
           type: [string, 'null']
+        email_verified:
+          type: boolean
+    EmailInput:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    ActionToken:
+      type: object
+      additionalProperties: false
+      required: [token]
+      properties:
+        token:
+          type: string
+          minLength: 32
+          maxLength: 256
+    PasswordReset:
+      type: object
+      additionalProperties: false
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          minLength: 32
+          maxLength: 256
+        password:
+          type: string
+          minLength: 10
+          maxLength: 128
+    EmailActionMessage:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
     AuthToken:
       type: object
       required: [access_token, token_type, expires_in, user]
