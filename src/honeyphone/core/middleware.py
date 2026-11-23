@@ -43,10 +43,13 @@ class BodySizeLimitMiddleware:
 
         async def replay_receive() -> dict[str, Any]:
             nonlocal delivered
-            if delivered:
-                return {"type": "http.request", "body": b"", "more_body": False}
-            delivered = True
-            return {"type": "http.request", "body": body, "more_body": False}
+            if not delivered:
+                delivered = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            # Downstream responses such as Starlette's FileResponse call receive()
+            # to wait for http.disconnect. Returning an empty http.request here
+            # makes that listener spin forever and can pin a CPU core.
+            return await receive()
 
         await self.app(scope, replay_receive, send)
 
