@@ -25,7 +25,7 @@ Swagger está en http://127.0.0.1:8000/docs y el estado en http://127.0.0.1:8000
 
 ## Cuentas y autenticación
 
-La API ofrece `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/google` y `GET /api/v1/auth/me`. Los endpoints de dispositivos, revisiones y sesiones del señuelo requieren un token Bearer. Las instalaciones se asocian con la primera cuenta que las registra y las consultas solo devuelven datos de instalaciones propias.
+La API ofrece registro, inicio de sesión con contraseña o Google, consulta y eliminación de la cuenta autenticada. Las revisiones, dispositivos y sesiones/eventos del señuelo requieren un token Bearer; `/healthz`, registro e inicio de sesión son públicos. Las instalaciones se asocian con la primera cuenta que las registra y las consultas solo devuelven datos de instalaciones propias. `DELETE /api/v1/auth/me` elimina la cuenta y sus instalaciones asociadas.
 
 Para correo y contraseña, la contraseña se guarda con scrypt; nunca se guarda en texto claro. Para Google, el servidor verifica el ID token contra `GOOGLE_CLIENT_IDS`. Usa como audiencia el ID del cliente OAuth de tipo Web; la app Android solicita el ID token con ese mismo cliente. No guardes el JSON de OAuth ni su `client_secret` en el repositorio o APK.
 
@@ -33,15 +33,18 @@ En producción define `AUTH_SECRET_KEY` con un secreto aleatorio de al menos 32 
 
 El inicio de sesión no depende de SES. La verificación de correo y la recuperación de contraseña requieren configurar envío transaccional y todavía no están implementadas.
 
-## Rutas P0
+## Rutas de la API
 
-- GET /healthz
-- POST /api/v1/network-checks
-- GET /api/v1/network-checks con filtro, cursor y límite hasta 50
-- GET /api/v1/network-checks/{check_id}
-- DELETE /api/v1/network-checks/{check_id}
+- `GET /healthz`
+- `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/google`
+- `GET /api/v1/auth/me`, `DELETE /api/v1/auth/me`
+- `POST /api/v1/network-checks`, `GET /api/v1/network-checks` con filtros, cursor y límite hasta 50
+- `GET /api/v1/network-checks/{check_id}`, `DELETE /api/v1/network-checks/{check_id}`
+- `POST /api/v1/devices`, `GET /api/v1/devices`, `GET/PATCH/DELETE /api/v1/devices/{installation_id}`
+- `POST/GET /api/v1/honeypot/sessions`
+- `POST/GET /api/v1/honeypot/sessions/{session_id}/events`
 
-POST conserva idempotencia por check_id. Reutilizar el ID con contenido distinto produce conflicto. contracts/openapi.yaml contiene el contrato operativo y los ejemplos. Ejecuta scripts/sync-openapi.py al cambiar rutas o modelos.
+Las rutas de cuentas salvo registro/login/Google, y todas las rutas de revisiones, dispositivos y señuelo, requieren token Bearer. POST de revisiones conserva idempotencia por `check_id`; reutilizar el ID con contenido distinto produce conflicto. `contracts/openapi.yaml` documenta la interfaz y los ejemplos. Ejecuta `scripts/sync-openapi.py` al cambiar rutas o modelos.
 
 ## Persistencia y seguridad
 

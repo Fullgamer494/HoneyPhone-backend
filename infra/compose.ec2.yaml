@@ -19,7 +19,7 @@ services:
     networks: [private]
 
   api:
-    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.4.1}
+    image: ${HONEYPHONE_API_IMAGE:-honeyphone-api:0.5.0}
     restart: unless-stopped
     environment:
       APP_ENV: production
@@ -27,6 +27,10 @@ services:
       MAX_BODY_BYTES: 65536
       AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required}
       GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
+      AWS_REGION: ${AWS_REGION:-us-east-2}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@myuspot.org}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://honeyphone-api.myuspot.org}
+      APK_DOWNLOAD_URL: ${APK_DOWNLOAD_URL:-}
     depends_on:
       db:
         condition: service_healthy
