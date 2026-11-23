@@ -79,7 +79,7 @@ def list_sessions(installation_id: UUID | None = None, limit: int = Query(20, ge
 
 @router.post("/{session_id}/events")
 def append_events(session_id: UUID, batch: EventBatch, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
-    with db.begin():
+    try:
         owned_session = db.scalar(select(HoneypotSession).join(Installation).where(HoneypotSession.session_id == session_id, Installation.owner_user_id == user.user_id))
         if owned_session is None:
             raise HTTPException(404, detail={"code":"SESSION_NOT_FOUND","message":"No se encontró la sesión."})
@@ -110,6 +110,10 @@ def append_events(session_id: UUID, batch: EventBatch, db: Session = Depends(get
                 source_ip_masked=str(network), http_method=item.http_method, request_path=item.request_path,
                 user_agent_family=item.user_agent_family, content_length=item.content_length, response_code=item.response_code, payload_sha256=digest))
             inserted += 1
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return {"inserted_count":inserted,"duplicate_count":duplicates}
 
 @router.get("/{session_id}/events")
