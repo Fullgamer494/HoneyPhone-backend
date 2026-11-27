@@ -1,57 +1,131 @@
-# HoneyPhone API
+# HoneyPhone Backend
 
-API FastAPI 0.4.1 con Pydantic, SQLAlchemy 2, psycopg 3 y Alembic. Este repositorio contiene el servicio, PostgreSQL local, el contrato OpenAPI y herramientas de desarrollo.
+<p align="center">
+  <img src="logo.png" alt="Logotipo de HoneyPhone" width="144" />
+</p>
 
-## Preparar entorno
+<p align="center"><strong>API para cuentas, revisiones de red y eventos del señuelo.</strong><br />FastAPI · PostgreSQL · OpenAPI</p>
 
-Desde la raíz de este repositorio:
+![Arquitectura de HoneyPhone Backend](preview.png)
 
-    cp .env.example .env
-    python3 -m venv .venv
-    .venv/bin/pip install -e '.[test]'
+HoneyPhone Backend es el servicio de la app Android. Administra cuentas, autentica solicitudes, asocia instalaciones y conserva revisiones y eventos con aislamiento por usuario. La versión de la API se define en `src/honeyphone/main.py`.
 
-Si ya existe .env, no lo sobrescribas. Inicia PostgreSQL y aplica las migraciones:
+## Funcionalidades
 
-    docker compose --env-file .env -f infra/compose.yaml up -d db
-    .venv/bin/alembic -c alembic.ini upgrade head
+- Registro con correo, verificación por correo, inicio de sesión con contraseña y recuperación de acceso mediante enlaces de un solo uso.
+- Inicio de sesión con Google ID token, validado contra `GOOGLE_CLIENT_IDS`.
+- Lectura, consulta paginada y eliminación de revisiones de red; la creación es idempotente por `check_id`.
+- Registro, consulta, renombrado y revocación de instalaciones Android.
+- Sesiones y lotes de eventos del señuelo HTTP. Las IP que llegan a la API deben estar enmascaradas como `/24` en IPv4 o `/64` en IPv6; no se aceptan cuerpos de petición.
+- OpenAPI en `/openapi.json`, Swagger UI en `/docs` y páginas para acciones de cuenta.
 
-El servicio PostgreSQL usa 127.0.0.1:5433.
+La API no determina por sí sola que una red sea segura o esté comprometida. Cuando la app no tiene destinos controlados para DNS o HTTPS, esos indicadores se mantienen como `NOT_CONFIGURED`.
 
-## Iniciar API
+## Tecnologías y requisitos
 
-    .venv/bin/uvicorn honeyphone.main:app --app-dir src --host 127.0.0.1 --port 8000
+- Python 3.12 o posterior
+- FastAPI, Pydantic Settings, SQLAlchemy 2, psycopg 3 y Alembic
+- Docker Compose para PostgreSQL 16 en desarrollo local
 
-Swagger está en http://127.0.0.1:8000/docs y el estado en http://127.0.0.1:8000/healthz.
+## Desarrollo local
 
-## Cuentas y autenticación
+Desde la raíz de este repositorio, crea el archivo local de entorno sin reemplazar uno que ya exista:
 
-La API ofrece registro, inicio de sesión con contraseña o Google, consulta y eliminación de la cuenta autenticada. Las revisiones, dispositivos y sesiones/eventos del señuelo requieren un token Bearer; `/healthz`, registro e inicio de sesión son públicos. Las instalaciones se asocian con la primera cuenta que las registra y las consultas solo devuelven datos de instalaciones propias. `DELETE /api/v1/auth/me` elimina la cuenta y sus instalaciones asociadas.
+```bash
+# macOS / Linux
+if [ ! -f .env ]; then cp .env.example .env; fi
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-Para correo y contraseña, la contraseña se guarda con scrypt; nunca se guarda en texto claro. Para Google, el servidor verifica el ID token contra `GOOGLE_CLIENT_IDS`. Usa como audiencia el ID del cliente OAuth de tipo Web; la app Android solicita el ID token con ese mismo cliente. No guardes el JSON de OAuth ni su `client_secret` en el repositorio o APK.
+En Windows PowerShell:
 
-En producción define `AUTH_SECRET_KEY` con un secreto aleatorio de al menos 32 caracteres y `GOOGLE_CLIENT_IDS` con los IDs de cliente autorizados separados por comas. En EC2, usa un archivo `.env` con permisos restringidos y rota el secreto con cuidado: invalidará las sesiones activas. La migración `0004_accounts` crea usuarios y asocia la instalación a una cuenta. Los registros previos quedan intactos y se hacen visibles cuando la app registra su instalación después de iniciar sesión.
+```powershell
+if (!(Test-Path .env)) { Copy-Item .env.example .env }
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
 
-El inicio de sesión no depende de SES. La verificación de correo y la recuperación de contraseña requieren configurar envío transaccional y todavía no están implementadas.
+Instala la API y sus dependencias de desarrollo, inicia PostgreSQL y aplica las migraciones:
 
-## Rutas de la API
+```bash
+python -m pip install -e ".[test]"
+docker compose --env-file .env -f infra/compose.yaml up -d db
+python -m alembic -c alembic.ini upgrade head
+```
 
-- `GET /healthz`
-- `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/google`
-- `GET /api/v1/auth/me`, `DELETE /api/v1/auth/me`
-- `POST /api/v1/network-checks`, `GET /api/v1/network-checks` con filtros, cursor y límite hasta 50
-- `GET /api/v1/network-checks/{check_id}`, `DELETE /api/v1/network-checks/{check_id}`
-- `POST /api/v1/devices`, `GET /api/v1/devices`, `GET/PATCH/DELETE /api/v1/devices/{installation_id}`
-- `POST/GET /api/v1/honeypot/sessions`
-- `POST/GET /api/v1/honeypot/sessions/{session_id}/events`
+Inicia el servidor:
 
-Las rutas de cuentas salvo registro/login/Google, y todas las rutas de revisiones, dispositivos y señuelo, requieren token Bearer. POST de revisiones conserva idempotencia por `check_id`; reutilizar el ID con contenido distinto produce conflicto. `contracts/openapi.yaml` documenta la interfaz y los ejemplos. Ejecuta `scripts/sync-openapi.py` al cambiar rutas o modelos.
+```bash
+python -m uvicorn honeyphone.main:app --app-dir src --reload --host 127.0.0.1 --port 8000
+```
 
-## Persistencia y seguridad
+La API queda disponible en `http://127.0.0.1:8000`; consulta `/healthz`, `/docs` y `/openapi.json`. PostgreSQL se publica solo en loopback, en el puerto `5433` por defecto.
 
-Alembic 0001 crea las tablas base; 0002 añade network_label y wifi_metrics. Las migraciones son la fuente ejecutable del esquema.
+## Configuración
 
-`/healthz` permanece público para la comprobación de disponibilidad. Las rutas de datos y dispositivos requieren autenticación. No guarda SSID/BSSID, ubicación, IP completa del teléfono ni contraseñas sin hash.
+`.env.example` documenta las variables. Los valores de ejemplo son únicamente para desarrollo local.
+
+| Variable | Uso |
+| --- | --- |
+| `DATABASE_URL` | Conexión SQLAlchemy a PostgreSQL. |
+| `AUTH_SECRET_KEY` | Firma de sesiones Bearer; en producción debe ser aleatoria y tener al menos 32 caracteres. |
+| `GOOGLE_CLIENT_IDS` | IDs de cliente OAuth autorizados, separados por comas. Necesario para Google Sign-In. |
+| `AWS_REGION` | Región usada por SES para correo de verificación y recuperación. |
+| `EMAIL_FROM` | Remitente verificado para SES. |
+| `PUBLIC_BASE_URL` | Origen público que usan los enlaces de cuenta. |
+| `APK_DOWNLOAD_URL` | Destino opcional de la ruta `/download`. |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | Configuración del servicio PostgreSQL de Compose. |
+
+En producción, suministra las credenciales de AWS mediante un rol o el proveedor de credenciales de AWS; no las agregues a `.env.example` ni al repositorio. No despliegues con el secreto local de ejemplo.
+
+## Rutas principales
+
+| Área | Rutas |
+| --- | --- |
+| Salud | `GET /healthz` |
+| Cuenta | `POST /api/v1/auth/register`, `/login`, `/google`, `/verify-email/request`, `/verify-email/confirm`, `/password/forgot`, `/password/reset`; `GET` y `DELETE /api/v1/auth/me` |
+| Revisiones | `POST` y `GET /api/v1/network-checks`; `GET` y `DELETE /api/v1/network-checks/{check_id}` |
+| Dispositivos | `POST` y `GET /api/v1/devices`; `GET`, `PATCH` y `DELETE /api/v1/devices/{installation_id}` |
+| Señuelo | `POST` y `GET /api/v1/honeypot/sessions`; `POST` y `GET /api/v1/honeypot/sessions/{session_id}/events` |
+
+`/healthz` y las operaciones públicas de autenticación no requieren sesión. Las consultas de cuenta y todas las rutas de datos requieren `Authorization: Bearer <token>`. Las consultas de revisiones aceptan filtros y cursor; el límite por página es 50. El tamaño máximo de una solicitud es 64 KiB.
+
+## Migraciones y contrato
+
+Alembic es la fuente ejecutable del esquema. Después de cambiar rutas o modelos, actualiza el contrato desde la raíz del repositorio:
+
+```bash
+python scripts/sync-openapi.py
+```
+
+Consulta [`contracts/README.md`](contracts/README.md), [`contracts/openapi.yaml`](contracts/openapi.yaml) y los ejemplos sintéticos en `contracts/examples/`. Las rutas marcadas como P1/diseño no están implementadas como funciones operativas.
 
 ## Pruebas de integración
 
-Instala las dependencias con `.venv/bin/pip install -e '.[test]'`. Las pruebas requieren una API en ejecución y una base PostgreSQL desechable cuyo nombre comience con `honeyphone_verify_`; se niegan a usar otra base. Define `HP_TEST_BASE_URL` con la URL de esa API y `DATABASE_URL` con la conexión directa a esa misma base, aplica las migraciones y ejecuta `.venv/bin/pytest -q`. Las pruebas crean y eliminan registros para comprobar persistencia, idempotencia, validación y revocación de dispositivos.
+Las pruebas usan una API en ejecución y una base PostgreSQL desechable cuyo nombre debe comenzar con `honeyphone_verify_`. Define `HP_TEST_BASE_URL` y `DATABASE_URL` para esa misma instancia, aplica las migraciones y ejecuta:
+
+```bash
+python -m pytest -q
+```
+
+Las pruebas se niegan a ejecutar escrituras sobre una base que no cumpla el prefijo requerido. [`scripts/README.md`](scripts/README.md) describe las herramientas auxiliares.
+
+## Estructura
+
+```text
+src/honeyphone/
+├── core/                 # configuración, base de datos, middleware y errores
+├── modules/
+│   ├── accounts/         # autenticación y acciones de cuenta
+│   ├── checks/           # revisiones de red y persistencia
+│   ├── devices/          # instalaciones asociadas a cuentas
+│   ├── health/           # estado del servicio
+│   ├── honeypot/         # sesiones y eventos
+│   └── site/             # páginas públicas de cuenta/descarga
+└── static/               # páginas servidas por la API
+```
+
+## Licencia
+
+El código propio de este repositorio se distribuye bajo MIT; consulta [`LICENSE`](LICENSE). Las dependencias y otros componentes de terceros mantienen sus licencias respectivas.
