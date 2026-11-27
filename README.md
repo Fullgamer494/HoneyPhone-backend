@@ -91,6 +91,16 @@ En producción, suministra las credenciales de AWS mediante un rol o el proveedo
 
 `/healthz` y las operaciones públicas de autenticación no requieren sesión. Las consultas de cuenta y todas las rutas de datos requieren `Authorization: Bearer <token>`. Las consultas de revisiones aceptan filtros y cursor; el límite por página es 50. El tamaño máximo de una solicitud es 64 KiB.
 
+## Controles HTTP de seguridad
+
+La API valida entradas con Pydantic, autentica con tokens Bearer firmados y almacena contraseñas con scrypt y sal aleatoria. Antes de leer el cuerpo o acceder a la base, limita cada IP a 120 solicitudes de API por 60 segundos y a 10 operaciones POST de autenticación por ese mismo intervalo (login, registro, Google y enlaces de cuenta comparten presupuesto). Al excederlo devuelve `429` y `Retry-After`; `/healthz` queda disponible para supervisión.
+
+El limitador conserva como máximo 10 000 IP activas y se aplica por proceso. Reiniciar el proceso reinicia las ventanas; para varios workers o réplicas se requiere un limitador compartido en el proxy o un almacén central. Uvicorn debe confiar únicamente en las direcciones del proxy real mediante `--forwarded-allow-ips`; el middleware no interpreta directamente `X-Forwarded-For`.
+
+Las respuestas incluyen `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`. Las rutas de API y cuenta usan `Cache-Control: no-store`; HSTS se añade cuando el esquema de la solicitud es HTTPS. El proxy que termina TLS debe entregar ese esquema mediante cabeceras confiables y aplicar HSTS también en su borde público.
+
+Las pruebas de estos controles no necesitan PostgreSQL: `python -m unittest discover -s tests -p test_http_security.py -v`.
+
 ## Migraciones y contrato
 
 Alembic es la fuente ejecutable del esquema. Después de cambiar rutas o modelos, actualiza el contrato desde la raíz del repositorio:

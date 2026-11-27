@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY pyproject.toml alembic.ini ./
+COPY pyproject.toml alembic.ini LICENSE ./
 COPY alembic ./alembic
 COPY src ./src
 
